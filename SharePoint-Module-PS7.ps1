@@ -506,7 +506,7 @@ function Test-SharePointTenantUrl {
 function Connect-SharePointOnline {
     <#
     .SYNOPSIS
-        Connects to SharePoint Online Admin Center with multiple authentication methods
+        Connects to SharePoint Online Admin Center using working method from older module
     #>
     [CmdletBinding()]
     param(
@@ -518,71 +518,44 @@ function Connect-SharePointOnline {
         Write-LogMessage -Message "Connecting to SharePoint Online Admin Center..." -Type Info
         Write-LogMessage -Message "Admin URL: $AdminUrl" -Type Info
         
-        # Try multiple connection methods
-        $connectionSuccess = $false
-        
-        # Method 1: Try modern authentication (default)
+        # Use the simple method that worked in the older module
         try {
-            Write-LogMessage -Message "Attempting modern authentication..." -Type Info
+            Write-LogMessage -Message "Connecting to SharePoint Online..." -Type Info
             Connect-SPOService -Url $AdminUrl
-            $connectionSuccess = $true
-            Write-LogMessage -Message "Connected using modern authentication" -Type Success
-        }
-        catch {
-            Write-LogMessage -Message "Modern auth failed: $($_.Exception.Message)" -Type Warning
-        }
-        
-        # Method 2: Try with credential prompt if modern auth failed
-        if (-not $connectionSuccess) {
+            Write-LogMessage -Message "Successfully connected to SharePoint Online" -Type Success
+            
+            # Verify connection and permissions
             try {
-                Write-LogMessage -Message "Attempting authentication with credential prompt..." -Type Info
-                Write-Host "Please provide your SharePoint Administrator credentials when prompted..." -ForegroundColor Yellow
-                Connect-SPOService -Url $AdminUrl -Credential (Get-Credential -Message "Enter SharePoint Administrator credentials")
-                $connectionSuccess = $true
-                Write-LogMessage -Message "Connected using credential authentication" -Type Success
+                $tenantInfo = Get-SPOTenant -ErrorAction Stop
+                Write-LogMessage -Message "SharePoint Administrator permissions verified" -Type Success
+                Write-LogMessage -Message "Connected to SharePoint tenant: $($tenantInfo.Title)" -Type Info
+                return $true
             }
             catch {
-                Write-LogMessage -Message "Credential auth failed: $($_.Exception.Message)" -Type Warning
+                Write-LogMessage -Message "Connected but may not have SharePoint Administrator permissions" -Type Warning
+                Write-LogMessage -Message "Some operations may fail. Contact your admin to assign SharePoint Administrator role." -Type Warning
+                
+                # Ask user if they want to continue
+                Write-Host ""
+                $continue = Read-Host "Continue anyway? (Y/N) [Y]"
+                if ($continue -eq 'N' -or $continue -eq 'n') {
+                    return $false
+                }
+                return $true
             }
-        }
-        
-        if (-not $connectionSuccess) {
-            Write-LogMessage -Message "All connection methods failed" -Type Error
-            Write-LogMessage -Message "Please verify:" -Type Info
-            Write-LogMessage -Message "1. You have SharePoint Administrator permissions" -Type Info
-            Write-LogMessage -Message "2. The tenant URL is correct: $AdminUrl" -Type Info
-            Write-LogMessage -Message "3. SharePoint Online is activated in your tenant" -Type Info
-            Write-LogMessage -Message "4. Try updating SharePoint Online PowerShell module: Update-Module Microsoft.Online.SharePoint.PowerShell" -Type Info
-            return $false
-        }
-        
-        # Verify connection and permissions
-        try {
-            $tenantInfo = Get-SPOTenant -ErrorAction Stop
-            Write-LogMessage -Message "Successfully verified SharePoint Administrator permissions" -Type Success
-            Write-LogMessage -Message "Connected to SharePoint tenant: $($tenantInfo.Title)" -Type Info
-            return $true
         }
         catch {
-            Write-LogMessage -Message "Connected but may not have SharePoint Administrator permissions" -Type Warning
-            Write-LogMessage -Message "Some operations may fail. Contact your admin to assign SharePoint Administrator role." -Type Warning
-            
-            # Ask user if they want to continue
-            Write-Host ""
-            $continue = Read-Host "Continue anyway? (Y/N) [Y]"
-            if ($continue -eq 'N' -or $continue -eq 'n') {
-                return $false
-            }
-            return $true
+            Write-LogMessage -Message "Failed to connect to SharePoint Online - $($_.Exception.Message)" -Type Error
+            Write-LogMessage -Message "Common solutions:" -Type Info
+            Write-LogMessage -Message "1. Ensure you have SharePoint Administrator or Global Administrator role" -Type Info
+            Write-LogMessage -Message "2. Try updating the SharePoint module: Update-Module Microsoft.Online.SharePoint.PowerShell -Force" -Type Info
+            Write-LogMessage -Message "3. If you have MFA enabled, ensure you can sign in normally first" -Type Info
+            Write-LogMessage -Message "4. Verify tenant name is correct (should be: your-tenant-name-admin.sharepoint.com)" -Type Info
+            return $false
         }
     }
     catch {
-        Write-LogMessage -Message "Failed to connect to SharePoint Online - $($_.Exception.Message)" -Type Error
-        Write-LogMessage -Message "Troubleshooting tips:" -Type Info
-        Write-LogMessage -Message "1. Verify SharePoint tenant URL format" -Type Info
-        Write-LogMessage -Message "2. Check if SharePoint Online is licensed and activated" -Type Info
-        Write-LogMessage -Message "3. Ensure you have Global Admin or SharePoint Admin role" -Type Info
-        Write-LogMessage -Message "4. Update the SharePoint module: Update-Module Microsoft.Online.SharePoint.PowerShell -Force" -Type Info
+        Write-LogMessage -Message "Unexpected error connecting to SharePoint Online - $($_.Exception.Message)" -Type Error
         return $false
     }
 }
