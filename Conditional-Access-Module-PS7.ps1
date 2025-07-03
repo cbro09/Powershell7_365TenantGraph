@@ -614,6 +614,3 @@ function Test-ExistingCAPolicies {
         return $false
     }
 }
-
-# === Export Functions ===
-Export-ModuleMember -Function New-TenantCAPolices
