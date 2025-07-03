@@ -573,7 +573,7 @@ function Test-CAPolicyPrerequisites {
     foreach ($prereq in $prerequisites.GetEnumerator()) {
         $status = if ($prereq.Value) { "✓ Met" } else { "✗ Not Met" }
         $color = if ($prereq.Value) { "Green" } else { "Red" }
-        Write-Host "$($prereq.Key): " -ForegroundColor Gray -NoNewline
+        Write-Host ("{0}: " -f $prereq.Key) -ForegroundColor Gray -NoNewline
         Write-Host $status -ForegroundColor $color
     }
     Write-Host ""
@@ -597,11 +597,11 @@ function Test-ExistingCAPolicies {
         foreach ($targetPolicy in $targetPolicies) {
             $exists = $existingPolicies | Where-Object { $_.DisplayName -eq $targetPolicy }
             if ($exists) {
-                Write-Host "${targetPolicy}: " -ForegroundColor Gray -NoNewline
+                Write-Host ("{0}: " -f $targetPolicy) -ForegroundColor Gray -NoNewline
                 Write-Host "Already Exists" -ForegroundColor Yellow
             }
             else {
-                Write-Host "${targetPolicy}: " -ForegroundColor Gray -NoNewline
+                Write-Host ("{0}: " -f $targetPolicy) -ForegroundColor Gray -NoNewline
                 Write-Host "Will Be Created" -ForegroundColor Green
             }
         }
