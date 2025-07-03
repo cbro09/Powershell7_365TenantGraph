@@ -506,7 +506,7 @@ function Test-SharePointTenantUrl {
 function Connect-SharePointOnline {
     <#
     .SYNOPSIS
-        Connects to SharePoint Online Admin Center using working method from older module
+        Connects to SharePoint Online Admin Center using exact pattern from working older module
     #>
     [CmdletBinding()]
     param(
@@ -518,22 +518,56 @@ function Connect-SharePointOnline {
         Write-LogMessage -Message "Connecting to SharePoint Online Admin Center..." -Type Info
         Write-LogMessage -Message "Admin URL: $AdminUrl" -Type Info
         
-        # Use the simple method that worked in the older module
+        # Step 1: Clean up existing sessions (from older working module)
+        Write-LogMessage -Message "Cleaning up existing sessions..." -Type Info
         try {
-            Write-LogMessage -Message "Connecting to SharePoint Online..." -Type Info
+            Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null
+            Disconnect-SPOService -ErrorAction SilentlyContinue | Out-Null
+            Write-LogMessage -Message "Existing sessions disconnected" -Type Info
+        }
+        catch {
+            # Ignore cleanup errors
+        }
+        
+        # Step 2: Check SharePoint module version
+        try {
+            $spoModule = Get-Module -Name Microsoft.Online.SharePoint.PowerShell -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
+            if ($spoModule) {
+                Write-LogMessage -Message "SharePoint Online PowerShell module version: $($spoModule.Version)" -Type Info
+            }
+            else {
+                Write-LogMessage -Message "SharePoint Online PowerShell module not found - this may be the issue" -Type Warning
+                return $false
+            }
+        }
+        catch {
+            Write-LogMessage -Message "Could not check SharePoint module version" -Type Warning
+        }
+        
+        # Step 3: Validate URL format more thoroughly
+        if (-not $AdminUrl.Contains("-admin.sharepoint.com")) {
+            Write-LogMessage -Message "Invalid admin URL format. Must contain '-admin.sharepoint.com'" -Type Error
+            return $false
+        }
+        
+        # Step 4: Try connection with detailed error handling
+        try {
+            Write-LogMessage -Message "Attempting SharePoint Online connection..." -Type Info
+            
+            # Try the exact same method as the older working module
             Connect-SPOService -Url $AdminUrl
             Write-LogMessage -Message "Successfully connected to SharePoint Online" -Type Success
             
-            # Verify connection and permissions
+            # Verify connection exactly like the older module
             try {
                 $tenantInfo = Get-SPOTenant -ErrorAction Stop
                 Write-LogMessage -Message "SharePoint Administrator permissions verified" -Type Success
-                Write-LogMessage -Message "Connected to SharePoint tenant: $($tenantInfo.Title)" -Type Info
+                Write-LogMessage -Message "Connected to tenant: $($tenantInfo.Title)" -Type Info
                 return $true
             }
             catch {
                 Write-LogMessage -Message "Connected but may not have SharePoint Administrator permissions" -Type Warning
-                Write-LogMessage -Message "Some operations may fail. Contact your admin to assign SharePoint Administrator role." -Type Warning
+                Write-LogMessage -Message "Error details: $($_.Exception.Message)" -Type Warning
                 
                 # Ask user if they want to continue
                 Write-Host ""
@@ -545,17 +579,43 @@ function Connect-SharePointOnline {
             }
         }
         catch {
-            Write-LogMessage -Message "Failed to connect to SharePoint Online - $($_.Exception.Message)" -Type Error
-            Write-LogMessage -Message "Common solutions:" -Type Info
-            Write-LogMessage -Message "1. Ensure you have SharePoint Administrator or Global Administrator role" -Type Info
-            Write-LogMessage -Message "2. Try updating the SharePoint module: Update-Module Microsoft.Online.SharePoint.PowerShell -Force" -Type Info
-            Write-LogMessage -Message "3. If you have MFA enabled, ensure you can sign in normally first" -Type Info
-            Write-LogMessage -Message "4. Verify tenant name is correct (should be: your-tenant-name-admin.sharepoint.com)" -Type Info
-            return $false
+            # Detailed error analysis
+            $errorMessage = $_.Exception.Message
+            Write-LogMessage -Message "SharePoint connection failed: $errorMessage" -Type Error
+            
+            # Check for specific error patterns
+            if ($errorMessage -like "*400*" -or $errorMessage -like "*Bad Request*") {
+                Write-LogMessage -Message "400 Bad Request Error - This usually indicates:" -Type Warning
+                Write-LogMessage -Message "1. SharePoint Online PowerShell module needs updating" -Type Info
+                Write-LogMessage -Message "2. Tenant may not have SharePoint Online activated" -Type Info
+                Write-LogMessage -Message "3. URL format issue (verify tenant name is correct)" -Type Info
+                Write-LogMessage -Message "4. Authentication endpoint conflict" -Type Info
+                
+                Write-Host ""
+                Write-Host "DEBUGGING INFORMATION:" -ForegroundColor Yellow
+                Write-Host "Tenant URL: $AdminUrl" -ForegroundColor Gray
+                Write-Host "Module Version: $($spoModule.Version)" -ForegroundColor Gray
+                Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Gray
+                Write-Host ""
+                
+                # Suggest manual verification
+                Write-Host "Manual Verification Steps:" -ForegroundColor Cyan
+                Write-Host "1. Open browser and go to: $AdminUrl" -ForegroundColor White
+                Write-Host "2. Verify you can access SharePoint Admin Center" -ForegroundColor White
+                Write-Host "3. Check if SharePoint Online is activated in your tenant" -ForegroundColor White
+                Write-Host "4. Try: Update-Module Microsoft.Online.SharePoint.PowerShell -Force" -ForegroundColor White
+                
+                return $false
+            }
+            else {
+                Write-LogMessage -Message "Unexpected SharePoint connection error" -Type Error
+                Write-LogMessage -Message "Error details: $errorMessage" -Type Error
+                return $false
+            }
         }
     }
     catch {
-        Write-LogMessage -Message "Unexpected error connecting to SharePoint Online - $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Critical error in SharePoint connection function: $($_.Exception.Message)" -Type Error
         return $false
     }
 }
