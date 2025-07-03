@@ -43,14 +43,97 @@ $RequiredModules = @(
 )
 
 foreach ($Module in $RequiredModules) {
-    if (!(Get-Module -ListAvailable -Name $Module)) {
+    Write-LogMessage -Message "Processing module: $Module" -Type Info
+    
+    # Check if module is available
+    $moduleAvailable = Get-Module -ListAvailable -Name $Module
+    
+    if (!$moduleAvailable) {
         Write-LogMessage -Message "Installing $Module module..." -Type Info
         Install-Module $Module -Force -Scope CurrentUser -AllowClobber
         Write-LogMessage -Message "$Module module installed successfully" -Type Success
+        
+        # For PnP.PowerShell, force refresh module detection
+        if ($Module -eq 'PnP.PowerShell') {
+            Write-LogMessage -Message "Forcing PowerShell to refresh module cache..." -Type Info
+            
+            # Method 1: Refresh module list
+            Get-Module -ListAvailable -Refresh | Out-Null
+            
+            # Method 2: Manually update module paths for current session
+            $userModulePath = [Environment]::GetFolderPath("MyDocuments") + "\PowerShell\Modules"
+            $currentPaths = $env:PSModulePath -split ';'
+            if ($userModulePath -notin $currentPaths) {
+                $env:PSModulePath = $userModulePath + ';' + $env:PSModulePath
+                Write-LogMessage -Message "Added user module path to current session: $userModulePath" -Type Info
+            }
+            
+            # Method 3: Check if PnP.PowerShell is now detectable
+            Start-Sleep -Seconds 3
+            $pnpCheck = Get-Module -ListAvailable -Name 'PnP.PowerShell'
+            if ($pnpCheck) {
+                Write-LogMessage -Message "PnP.PowerShell found at: $($pnpCheck.ModuleBase)" -Type Success
+            }
+            else {
+                Write-LogMessage -Message "PnP.PowerShell still not detected, trying alternative paths..." -Type Warning
+                
+                # Check common installation locations
+                $possiblePaths = @(
+                    "$([Environment]::GetFolderPath('MyDocuments'))\PowerShell\Modules\PnP.PowerShell",
+                    "$([Environment]::GetFolderPath('MyDocuments'))\WindowsPowerShell\Modules\PnP.PowerShell",
+                    "$env:ProgramFiles\PowerShell\Modules\PnP.PowerShell",
+                    "$env:ProgramFiles\WindowsPowerShell\Modules\PnP.PowerShell"
+                )
+                
+                foreach ($path in $possiblePaths) {
+                    if (Test-Path $path) {
+                        Write-LogMessage -Message "Found PnP.PowerShell at: $path" -Type Success
+                        # Add this path to module path if not already there
+                        $parentPath = Split-Path $path -Parent
+                        if ($parentPath -notin ($env:PSModulePath -split ';')) {
+                            $env:PSModulePath = $parentPath + ';' + $env:PSModulePath
+                            Write-LogMessage -Message "Added path to module search: $parentPath" -Type Info
+                        }
+                        break
+                    }
+                }
+            }
+        }
+        
+        # Re-check after installation and path updates
+        $moduleAvailable = Get-Module -ListAvailable -Name $Module
     }
+    
+    # Try to import the module
     if (!(Get-Module -Name $Module)) {
-        Import-Module $Module -Force
-        Write-LogMessage -Message "$Module module imported" -Type Info
+        if ($moduleAvailable) {
+            try {
+                Import-Module $Module -Force -ErrorAction Stop
+                Write-LogMessage -Message "$Module module imported successfully" -Type Success
+            }
+            catch {
+                Write-LogMessage -Message "Failed to import $Module: $($_.Exception.Message)" -Type Error
+                
+                # For PnP.PowerShell, try importing with full path
+                if ($Module -eq 'PnP.PowerShell' -and $moduleAvailable) {
+                    try {
+                        $pnpModulePath = $moduleAvailable[0].ModuleBase
+                        Write-LogMessage -Message "Attempting to import PnP.PowerShell from: $pnpModulePath" -Type Info
+                        Import-Module $pnpModulePath -Force -ErrorAction Stop
+                        Write-LogMessage -Message "PnP.PowerShell imported using full path" -Type Success
+                    }
+                    catch {
+                        Write-LogMessage -Message "Failed to import PnP.PowerShell even with full path: $($_.Exception.Message)" -Type Error
+                    }
+                }
+            }
+        }
+        else {
+            Write-LogMessage -Message "$Module is not available even after installation attempt" -Type Error
+        }
+    }
+    else {
+        Write-LogMessage -Message "$Module is already loaded" -Type Info
     }
 }
 
@@ -439,13 +522,27 @@ function Test-SharePointPrerequisites {
         'SharePoint Permissions' = $false
     }
     
-    # Test required modules
+    # Test required modules with specific details
     $missingModules = @()
+    $moduleStatus = @{}
+    
     foreach ($module in $RequiredModules) {
-        if (-not (Get-Module -Name $module)) {
+        $available = Get-Module -ListAvailable -Name $module
+        $loaded = Get-Module -Name $module
+        
+        if (-not $available) {
             $missingModules += $module
+            $moduleStatus[$module] = "Not Installed"
+        }
+        elseif (-not $loaded) {
+            $missingModules += $module
+            $moduleStatus[$module] = "Installed but Not Loaded"
+        }
+        else {
+            $moduleStatus[$module] = "Ready"
         }
     }
+    
     $prerequisites['Required Modules'] = $missingModules.Count -eq 0
     
     # Test Graph permissions (basic test)
@@ -465,6 +562,30 @@ function Test-SharePointPrerequisites {
         Write-Host ("{0}: " -f $prereq.Key) -ForegroundColor Gray -NoNewline
         Write-Host $status -ForegroundColor $color
     }
+    
+    # Show detailed module status
+    if ($missingModules.Count -gt 0) {
+        Write-Host ""
+        Write-Host "Module Status Details:" -ForegroundColor Yellow
+        foreach ($moduleCheck in $moduleStatus.GetEnumerator()) {
+            $statusColor = switch ($moduleCheck.Value) {
+                "Ready" { "Green" }
+                "Installed but Not Loaded" { "Yellow" }
+                "Not Installed" { "Red" }
+            }
+            Write-Host "  $($moduleCheck.Key): " -ForegroundColor Gray -NoNewline
+            Write-Host $moduleCheck.Value -ForegroundColor $statusColor
+        }
+        
+        if ($moduleStatus.ContainsKey('PnP.PowerShell') -and $moduleStatus['PnP.PowerShell'] -ne "Ready") {
+            Write-Host ""
+            Write-Host "PnP.PowerShell Troubleshooting:" -ForegroundColor Cyan
+            Write-Host "1. Try closing and reopening PowerShell" -ForegroundColor White
+            Write-Host "2. Run: Get-Module -ListAvailable PnP.PowerShell" -ForegroundColor White
+            Write-Host "3. If missing, run: Install-Module PnP.PowerShell -Force -Scope CurrentUser" -ForegroundColor White
+        }
+    }
+    
     Write-Host ""
     
     return ($prerequisites.Values -notcontains $false)
