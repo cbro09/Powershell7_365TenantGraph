@@ -521,27 +521,28 @@ function Connect-SharePointOnline {
         # Try multiple connection methods
         $connectionSuccess = $false
         
-        # Method 1: Try interactive web login (most reliable)
+        # Method 1: Try modern authentication (default)
         try {
-            Write-LogMessage -Message "Attempting interactive web authentication..." -Type Info
-            Connect-SPOService -Url $AdminUrl -UseWebLogin
+            Write-LogMessage -Message "Attempting modern authentication..." -Type Info
+            Connect-SPOService -Url $AdminUrl
             $connectionSuccess = $true
-            Write-LogMessage -Message "Connected using interactive web login" -Type Success
+            Write-LogMessage -Message "Connected using modern authentication" -Type Success
         }
         catch {
-            Write-LogMessage -Message "Interactive web login failed: $($_.Exception.Message)" -Type Warning
+            Write-LogMessage -Message "Modern auth failed: $($_.Exception.Message)" -Type Warning
         }
         
-        # Method 2: Try modern auth if web login failed
+        # Method 2: Try with credential prompt if modern auth failed
         if (-not $connectionSuccess) {
             try {
-                Write-LogMessage -Message "Attempting modern authentication..." -Type Info
-                Connect-SPOService -Url $AdminUrl
+                Write-LogMessage -Message "Attempting authentication with credential prompt..." -Type Info
+                Write-Host "Please provide your SharePoint Administrator credentials when prompted..." -ForegroundColor Yellow
+                Connect-SPOService -Url $AdminUrl -Credential (Get-Credential -Message "Enter SharePoint Administrator credentials")
                 $connectionSuccess = $true
-                Write-LogMessage -Message "Connected using modern authentication" -Type Success
+                Write-LogMessage -Message "Connected using credential authentication" -Type Success
             }
             catch {
-                Write-LogMessage -Message "Modern auth failed: $($_.Exception.Message)" -Type Warning
+                Write-LogMessage -Message "Credential auth failed: $($_.Exception.Message)" -Type Warning
             }
         }
         
@@ -551,6 +552,7 @@ function Connect-SharePointOnline {
             Write-LogMessage -Message "1. You have SharePoint Administrator permissions" -Type Info
             Write-LogMessage -Message "2. The tenant URL is correct: $AdminUrl" -Type Info
             Write-LogMessage -Message "3. SharePoint Online is activated in your tenant" -Type Info
+            Write-LogMessage -Message "4. Try updating SharePoint Online PowerShell module: Update-Module Microsoft.Online.SharePoint.PowerShell" -Type Info
             return $false
         }
         
@@ -558,7 +560,7 @@ function Connect-SharePointOnline {
         try {
             $tenantInfo = Get-SPOTenant -ErrorAction Stop
             Write-LogMessage -Message "Successfully verified SharePoint Administrator permissions" -Type Success
-            Write-LogMessage -Message "SharePoint tenant ID: $($tenantInfo.Title)" -Type Info
+            Write-LogMessage -Message "Connected to SharePoint tenant: $($tenantInfo.Title)" -Type Info
             return $true
         }
         catch {
@@ -580,6 +582,7 @@ function Connect-SharePointOnline {
         Write-LogMessage -Message "1. Verify SharePoint tenant URL format" -Type Info
         Write-LogMessage -Message "2. Check if SharePoint Online is licensed and activated" -Type Info
         Write-LogMessage -Message "3. Ensure you have Global Admin or SharePoint Admin role" -Type Info
+        Write-LogMessage -Message "4. Update the SharePoint module: Update-Module Microsoft.Online.SharePoint.PowerShell -Force" -Type Info
         return $false
     }
 }
