@@ -37,7 +37,7 @@
 
 # === Automatic Module Management ===
 $RequiredModules = @(
-    'Microsoft.Online.SharePoint.PowerShell',
+    'PnP.PowerShell',
     'Microsoft.Graph.Groups',
     'Microsoft.Graph.Identity.DirectoryManagement'
 )
@@ -506,7 +506,7 @@ function Test-SharePointTenantUrl {
 function Connect-SharePointOnline {
     <#
     .SYNOPSIS
-        Connects to SharePoint Online Admin Center using exact pattern from working older module
+        Connects to SharePoint Online using modern PnP PowerShell (PowerShell 7 compatible)
     #>
     [CmdletBinding()]
     param(
@@ -515,52 +515,46 @@ function Connect-SharePointOnline {
     )
     
     try {
-        Write-LogMessage -Message "Connecting to SharePoint Online Admin Center..." -Type Info
+        Write-LogMessage -Message "Connecting to SharePoint Online using PnP PowerShell (PowerShell 7 compatible)..." -Type Info
         Write-LogMessage -Message "Admin URL: $AdminUrl" -Type Info
         
-        # Step 1: Clean up existing sessions (from older working module)
+        # Step 1: Clean up existing sessions
         Write-LogMessage -Message "Cleaning up existing sessions..." -Type Info
         try {
-            Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null
-            Disconnect-SPOService -ErrorAction SilentlyContinue | Out-Null
-            Write-LogMessage -Message "Existing sessions disconnected" -Type Info
+            Disconnect-PnPOnline -ErrorAction SilentlyContinue
+            Write-LogMessage -Message "Existing PnP sessions disconnected" -Type Info
         }
         catch {
             # Ignore cleanup errors
         }
         
-        # Step 2: Check SharePoint module version
+        # Step 2: Check PnP PowerShell module version
         try {
-            $spoModule = Get-Module -Name Microsoft.Online.SharePoint.PowerShell -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
-            if ($spoModule) {
-                Write-LogMessage -Message "SharePoint Online PowerShell module version: $($spoModule.Version)" -Type Info
+            $pnpModule = Get-Module -Name PnP.PowerShell -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
+            if ($pnpModule) {
+                Write-LogMessage -Message "PnP PowerShell module version: $($pnpModule.Version)" -Type Info
             }
             else {
-                Write-LogMessage -Message "SharePoint Online PowerShell module not found - this may be the issue" -Type Warning
-                return $false
+                Write-LogMessage -Message "PnP PowerShell module not found - installing now..." -Type Info
+                Install-Module PnP.PowerShell -Scope CurrentUser -Force -AllowClobber
+                Import-Module PnP.PowerShell -Force
             }
         }
         catch {
-            Write-LogMessage -Message "Could not check SharePoint module version" -Type Warning
+            Write-LogMessage -Message "Could not check PnP module version" -Type Warning
         }
         
-        # Step 3: Validate URL format more thoroughly
-        if (-not $AdminUrl.Contains("-admin.sharepoint.com")) {
-            Write-LogMessage -Message "Invalid admin URL format. Must contain '-admin.sharepoint.com'" -Type Error
-            return $false
-        }
-        
-        # Step 4: Try connection with detailed error handling
+        # Step 3: Connect using PnP PowerShell (PowerShell 7 compatible)
         try {
-            Write-LogMessage -Message "Attempting SharePoint Online connection..." -Type Info
+            Write-LogMessage -Message "Connecting with PnP PowerShell interactive authentication..." -Type Info
             
-            # Try the exact same method as the older working module
-            Connect-SPOService -Url $AdminUrl
-            Write-LogMessage -Message "Successfully connected to SharePoint Online" -Type Success
+            # PnP PowerShell interactive connection (works great with PS7)
+            Connect-PnPOnline -Url $AdminUrl -Interactive
+            Write-LogMessage -Message "Successfully connected to SharePoint Online with PnP PowerShell" -Type Success
             
-            # Verify connection exactly like the older module
+            # Verify connection and permissions
             try {
-                $tenantInfo = Get-SPOTenant -ErrorAction Stop
+                $tenantInfo = Get-PnPTenant -ErrorAction Stop
                 Write-LogMessage -Message "SharePoint Administrator permissions verified" -Type Success
                 Write-LogMessage -Message "Connected to tenant: $($tenantInfo.Title)" -Type Info
                 return $true
@@ -581,41 +575,23 @@ function Connect-SharePointOnline {
         catch {
             # Detailed error analysis
             $errorMessage = $_.Exception.Message
-            Write-LogMessage -Message "SharePoint connection failed: $errorMessage" -Type Error
+            Write-LogMessage -Message "PnP PowerShell connection failed: $errorMessage" -Type Error
             
-            # Check for specific error patterns
-            if ($errorMessage -like "*400*" -or $errorMessage -like "*Bad Request*") {
-                Write-LogMessage -Message "400 Bad Request Error - This usually indicates:" -Type Warning
-                Write-LogMessage -Message "1. SharePoint Online PowerShell module needs updating" -Type Info
-                Write-LogMessage -Message "2. Tenant may not have SharePoint Online activated" -Type Info
-                Write-LogMessage -Message "3. URL format issue (verify tenant name is correct)" -Type Info
-                Write-LogMessage -Message "4. Authentication endpoint conflict" -Type Info
-                
-                Write-Host ""
-                Write-Host "DEBUGGING INFORMATION:" -ForegroundColor Yellow
-                Write-Host "Tenant URL: $AdminUrl" -ForegroundColor Gray
-                Write-Host "Module Version: $($spoModule.Version)" -ForegroundColor Gray
-                Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Gray
-                Write-Host ""
-                
-                # Suggest manual verification
-                Write-Host "Manual Verification Steps:" -ForegroundColor Cyan
-                Write-Host "1. Open browser and go to: $AdminUrl" -ForegroundColor White
-                Write-Host "2. Verify you can access SharePoint Admin Center" -ForegroundColor White
-                Write-Host "3. Check if SharePoint Online is activated in your tenant" -ForegroundColor White
-                Write-Host "4. Try: Update-Module Microsoft.Online.SharePoint.PowerShell -Force" -ForegroundColor White
-                
-                return $false
-            }
-            else {
-                Write-LogMessage -Message "Unexpected SharePoint connection error" -Type Error
-                Write-LogMessage -Message "Error details: $errorMessage" -Type Error
-                return $false
-            }
+            Write-Host ""
+            Write-Host "MODERN SHAREPOINT CONNECTION FAILED" -ForegroundColor Red
+            Write-Host "PnP PowerShell Error: $errorMessage" -ForegroundColor Gray
+            Write-Host ""
+            Write-Host "Troubleshooting Steps:" -ForegroundColor Yellow
+            Write-Host "1. Ensure you have SharePoint Administrator or Global Administrator role" -ForegroundColor White
+            Write-Host "2. Verify tenant URL is accessible: $AdminUrl" -ForegroundColor White
+            Write-Host "3. Try updating PnP PowerShell: Update-Module PnP.PowerShell -Force" -ForegroundColor White
+            Write-Host "4. Check if SharePoint Online is activated in your tenant" -ForegroundColor White
+            
+            return $false
         }
     }
     catch {
-        Write-LogMessage -Message "Critical error in SharePoint connection function: $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Critical error in PnP PowerShell connection: $($_.Exception.Message)" -Type Error
         return $false
     }
 }
@@ -623,7 +599,7 @@ function Connect-SharePointOnline {
 function Configure-HubSite {
     <#
     .SYNOPSIS
-        Configures a site as a hub site
+        Configures a site as a hub site using PnP PowerShell
     #>
     [CmdletBinding()]
     param(
@@ -638,11 +614,14 @@ function Configure-HubSite {
     )
     
     try {
-        Write-LogMessage -Message "Configuring hub site: $HubSiteUrl" -Type Info
+        Write-LogMessage -Message "Configuring hub site with PnP PowerShell: $HubSiteUrl" -Type Info
+        
+        # Extract admin URL from hub site URL
+        $adminUrl = $HubSiteUrl -replace '\.sharepoint\.com.*', '-admin.sharepoint.com'
         
         # Check if site exists and get its information
         try {
-            $siteInfo = Get-SPOSite -Identity $HubSiteUrl -Detailed -ErrorAction Stop
+            $siteInfo = Get-PnPSite -Identity $HubSiteUrl -ErrorAction Stop
             Write-LogMessage -Message "Hub site found - Title: '$($siteInfo.Title)'" -Type Success
         }
         catch {
@@ -650,29 +629,34 @@ function Configure-HubSite {
             return $false
         }
         
-        # Update site title if needed
+        # Update site title if needed (connect to specific site first)
         $hubTitle = "$TenantName Hub"
         if ($siteInfo.Title -ne $hubTitle) {
             try {
-                Set-SPOSite -Identity $HubSiteUrl -Title $hubTitle -ErrorAction Stop
+                # Connect to the specific site to modify it
+                Connect-PnPOnline -Url $HubSiteUrl -Interactive
+                Set-PnPSite -Title $hubTitle -ErrorAction Stop
                 Write-LogMessage -Message "Updated hub site title to '$hubTitle'" -Type Success
+                
+                # Reconnect to admin center
+                Connect-PnPOnline -Url $adminUrl -Interactive
             }
             catch {
                 Write-LogMessage -Message "Could not update hub site title - $($_.Exception.Message)" -Type Warning
             }
         }
         
-        # Register as hub site
+        # Register as hub site using PnP PowerShell
         try {
-            $existingHubs = Get-SPOHubSite -ErrorAction SilentlyContinue
+            $existingHubs = Get-PnPHubSite -ErrorAction SilentlyContinue
             $isAlreadyHub = $existingHubs | Where-Object { $_.SiteUrl -eq $HubSiteUrl }
             
             if ($isAlreadyHub) {
                 Write-LogMessage -Message "Site is already registered as a hub site" -Type Warning
             }
             else {
-                Register-SPOHubSite -Site $HubSiteUrl -Principals @($AdminEmail)
-                Write-LogMessage -Message "Successfully registered hub site" -Type Success
+                Register-PnPHubSite -Site $HubSiteUrl
+                Write-LogMessage -Message "Successfully registered hub site with PnP PowerShell" -Type Success
                 Start-Sleep -Seconds 15  # Allow time for registration
             }
         }
@@ -681,19 +665,10 @@ function Configure-HubSite {
             return $false
         }
         
-        # Set site collection admin
-        try {
-            Set-SPOUser -Site $HubSiteUrl -LoginName $AdminEmail -IsSiteCollectionAdmin $true -ErrorAction Stop
-            Write-LogMessage -Message "Set site collection admin for hub site" -Type Success
-        }
-        catch {
-            Write-LogMessage -Message "Failed to set site collection admin - $($_.Exception.Message)" -Type Warning
-        }
-        
         return $true
     }
     catch {
-        Write-LogMessage -Message "Error configuring hub site - $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Error configuring hub site with PnP PowerShell - $($_.Exception.Message)" -Type Error
         return $false
     }
 }
@@ -701,7 +676,7 @@ function Configure-HubSite {
 function Create-CommunicationSite {
     <#
     .SYNOPSIS
-        Creates a new communication site
+        Creates a new communication site using PnP PowerShell
     #>
     [CmdletBinding()]
     param(
@@ -716,10 +691,14 @@ function Create-CommunicationSite {
     )
     
     try {
-        Write-LogMessage -Message "Creating communication site: $SiteName" -Type Info
+        Write-LogMessage -Message "Creating communication site with PnP PowerShell: $SiteName" -Type Info
         
-        New-SPOSite -Url $SiteUrl -Owner $Owner -StorageQuota $SharePointConfig.StorageQuota -Title $SiteName -Template "SITEPAGEPUBLISHING#0"
-        Write-LogMessage -Message "Communication site created: $SiteUrl" -Type Success
+        # Extract site alias from URL for PnP PowerShell
+        $siteAlias = ($SiteUrl -split '/sites/')[-1]
+        
+        # Create communication site using PnP PowerShell
+        New-PnPSite -Type CommunicationSite -Title $SiteName -Url $SiteUrl -Owner $Owner
+        Write-LogMessage -Message "Communication site created with PnP PowerShell: $SiteUrl" -Type Success
         
         # Wait for site provisioning
         Start-Sleep -Seconds 30
@@ -727,7 +706,7 @@ function Create-CommunicationSite {
         return $true
     }
     catch {
-        Write-LogMessage -Message "Failed to create communication site - $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Failed to create communication site with PnP PowerShell - $($_.Exception.Message)" -Type Error
         return $false
     }
 }
@@ -735,7 +714,7 @@ function Create-CommunicationSite {
 function Create-SpokeSites {
     <#
     .SYNOPSIS
-        Creates spoke sites
+        Creates spoke sites using PnP PowerShell
     #>
     [CmdletBinding()]
     param(
@@ -750,11 +729,14 @@ function Create-SpokeSites {
     
     foreach ($site in $SpokeSites) {
         try {
-            Write-LogMessage -Message "Creating site: $($site.Name)" -Type Info
+            Write-LogMessage -Message "Creating site with PnP PowerShell: $($site.Name)" -Type Info
             
-            # Check if site already exists
+            # Extract site alias from URL for PnP PowerShell
+            $siteAlias = ($site.URL -split '/sites/')[-1]
+            
+            # Check if site already exists using PnP PowerShell
             try {
-                $existingSite = Get-SPOSite -Identity $site.URL -ErrorAction Stop
+                $existingSite = Get-PnPSite -Identity $site.URL -ErrorAction Stop
                 Write-LogMessage -Message "Site '$($site.Name)' already exists: $($site.URL)" -Type Warning
                 $createdSites += $site.URL
                 continue
@@ -763,20 +745,32 @@ function Create-SpokeSites {
                 # Site does not exist, proceed with creation
             }
             
-            # Create the site
-            New-SPOSite -Url $site.URL -Owner $site.Owner -StorageQuota $site.StorageQuota -Title $site.Name -Template $site.Template
-            Write-LogMessage -Message "Created site: $($site.Name) at $($site.URL)" -Type Success
-            $createdSites += $site.URL
-            
-        }
-        catch {
-            if ($_.Exception.Message -like "*already exists*") {
-                Write-LogMessage -Message "Site '$($site.Name)' already exists: $($site.URL)" -Type Warning
+            # Create the site using PnP PowerShell
+            try {
+                if ($site.Template -eq "SITEPAGEPUBLISHING#0") {
+                    # Communication site
+                    New-PnPSite -Type CommunicationSite -Title $site.Name -Url $site.URL -Owner $site.Owner
+                }
+                else {
+                    # Team site (default)
+                    New-PnPSite -Type TeamSite -Title $site.Name -Alias $siteAlias -Owner $site.Owner
+                }
+                
+                Write-LogMessage -Message "Created site with PnP PowerShell: $($site.Name) at $($site.URL)" -Type Success
                 $createdSites += $site.URL
             }
-            else {
-                Write-LogMessage -Message "Failed to create site '$($site.Name)' - $($_.Exception.Message)" -Type Error
+            catch {
+                if ($_.Exception.Message -like "*already exists*" -or $_.Exception.Message -like "*site*already*") {
+                    Write-LogMessage -Message "Site '$($site.Name)' already exists: $($site.URL)" -Type Warning
+                    $createdSites += $site.URL
+                }
+                else {
+                    Write-LogMessage -Message "Failed to create site '$($site.Name)' with PnP PowerShell - $($_.Exception.Message)" -Type Error
+                }
             }
+        }
+        catch {
+            Write-LogMessage -Message "Error processing site '$($site.Name)' - $($_.Exception.Message)" -Type Error
         }
     }
     
@@ -888,7 +882,7 @@ function Create-SecurityGroup {
 function Associate-SitesWithHub {
     <#
     .SYNOPSIS
-        Associates spoke sites with hub site
+        Associates spoke sites with hub site using PnP PowerShell
     #>
     [CmdletBinding()]
     param(
@@ -908,16 +902,17 @@ function Associate-SitesWithHub {
         }
         
         try {
-            Add-SPOHubSiteAssociation -Site $site.URL -HubSite $HubSiteUrl -ErrorAction Stop
-            Write-LogMessage -Message "Associated $($site.Name) with hub site" -Type Success
+            # Use PnP PowerShell for hub association
+            Add-PnPHubSiteAssociation -Site $site.URL -HubSite $HubSiteUrl -ErrorAction Stop
+            Write-LogMessage -Message "Associated $($site.Name) with hub site using PnP PowerShell" -Type Success
             $successfulAssociations++
         }
         catch {
-            Write-LogMessage -Message "Failed to associate $($site.Name) with hub - $($_.Exception.Message)" -Type Warning
+            Write-LogMessage -Message "Failed to associate $($site.Name) with hub using PnP PowerShell - $($_.Exception.Message)" -Type Warning
         }
     }
     
-    Write-LogMessage -Message "Successfully associated $successfulAssociations sites with hub" -Type Info
+    Write-LogMessage -Message "Successfully associated $successfulAssociations sites with hub using PnP PowerShell" -Type Info
     return $successfulAssociations
 }
 
@@ -1004,11 +999,14 @@ function Show-SharePointResults {
     Write-Host "3. Configure site permissions and sharing settings" -ForegroundColor Gray
     Write-Host "4. Set up site content and navigation" -ForegroundColor Gray
     Write-Host ""
+    Write-Host "✅ Modern SharePoint Management:" -ForegroundColor Green
+    Write-Host "Sites created using PnP PowerShell (PowerShell 7 compatible)" -ForegroundColor Gray
+    Write-Host ""
     
-    # Disconnect SharePoint session
+    # Disconnect PnP session
     try {
-        Disconnect-SPOService
-        Write-LogMessage -Message "Disconnected from SharePoint Online" -Type Info
+        Disconnect-PnPOnline
+        Write-LogMessage -Message "Disconnected from SharePoint Online (PnP PowerShell)" -Type Info
     }
     catch {
         # Ignore disconnect errors
