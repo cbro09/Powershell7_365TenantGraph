@@ -548,4 +548,4 @@ function Show-AdminAccountSummary {
     Write-Host "• Consider implementing PIM for just-in-time admin access" -ForegroundColor Yellow
     Write-Host "• Review admin account activity regularly" -ForegroundColor Yellow
     Write-Host "• Implement break-glass procedures for BG02 account" -ForegroundColor Yellow
-}""
+}
