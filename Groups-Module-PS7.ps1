@@ -457,7 +457,3 @@ function Test-GroupCreationPrerequisites {
     
     return ($prerequisites.Values -notcontains $false)
 }
-
-
-# === Export Functions ===
-Export-ModuleMember -Function New-TenantGroups, Test-GroupCreationPrerequisites
