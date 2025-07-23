@@ -549,6 +549,3 @@ function Show-AdminAccountSummary {
     Write-Host "• Review admin account activity regularly" -ForegroundColor Yellow
     Write-Host "• Implement break-glass procedures for BG02 account" -ForegroundColor Yellow
 }
-
-# === Export Functions ===
-Export-ModuleMember -Function New-TenantAdminAccounts

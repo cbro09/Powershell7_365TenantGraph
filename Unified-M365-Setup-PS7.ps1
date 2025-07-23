@@ -73,7 +73,6 @@ $script:GitHubConfig = @{
         "Intune" = "Intune-Module-PS7.ps1"
         "Users" = "User-Module-PS7.ps1"
         "Documentation" = "Documentation-Module-PS7.ps1"
-        "AdminCreation" = "Admin-HD-Role-Creation-PS7.ps1"
     }
 }
 
@@ -989,15 +988,6 @@ function Start-Setup {
                         Read-Host "Press Enter to continue"
                     }
                     9 {
-                        # Create Admin Helpdesk Role
-                        Write-LogMessage -Message "Executing: Create Admin Helpdesk Role" -Type Info
-                        $success = Invoke-ModuleOperation -ModuleName "AdminCreation" -FunctionName "New-AdminHelpdeskRole"
-                        if ($success) {
-                            Write-LogMessage -Message "Admin Helpdesk Role created successfully" -Type Success
-                        }
-                        Read-Host "Press Enter to continue"
-                    }
-                    10 {
                         # Generate documentation
                         Write-LogMessage -Message "Executing: Generate Documentation" -Type Info
                         if (-not $script:TenantState) {
@@ -1011,13 +1001,13 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    11 {
+                    10 {
                         # Debug Excel file
                         Write-LogMessage -Message "Executing: Debug Excel File" -Type Info
                         Debug-ExcelDataPS7
                         Read-Host "Press Enter to continue"
                     }
-                    12 {
+                    11 {
                         # Exit
                         $exitScript = $true
                         Write-LogMessage -Message "Unified Microsoft 365 Tenant Setup Utility ended by user request" -Type Info
