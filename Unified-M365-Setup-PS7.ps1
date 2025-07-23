@@ -34,34 +34,9 @@ $script:config = @{
             Name = 'Microsoft.Graph.Authentication'
             MinVersion = '2.0.0'
             Scope = 'CurrentUser'
-        },
-        @{
-            Name = 'Microsoft.Graph.Identity.DirectoryManagement'
-            MinVersion = '2.0.0'
-            Scope = 'CurrentUser'
-        },
-        @{
-            Name = 'Microsoft.Graph.Users'
-            MinVersion = '2.0.0'
-            Scope = 'CurrentUser'
-        },
-        @{
-            Name = 'Microsoft.Graph.Groups'
-            MinVersion = '2.0.0'
-            Scope = 'CurrentUser'
-        },
-        @{
-            Name = 'Microsoft.Graph.DeviceManagement'
-            MinVersion = '2.0.0'
-            Scope = 'CurrentUser'
-        },
-        @{
-            Name = 'Microsoft.Online.SharePoint.PowerShell'
-            MinVersion = '16.0.0'
-            Scope = 'CurrentUser'
         }
     )
-    
+   
     # Microsoft Graph scopes
     GraphScopes = @(
         "User.ReadWrite.All"
@@ -92,6 +67,7 @@ $script:GitHubConfig = @{
     CacheDirectory = "$env:TEMP\M365TenantSetup\Modules"
     ModuleFiles = @{
         "Groups" = "Groups-Module-PS7.ps1"
+        "AdminAccounts" = "Admin-Accounts-Module-PS7.ps1"
         "ConditionalAccess" = "Conditional-Access-Module-PS7.ps1"
         "SharePoint" = "SharePoint-Module-PS7.ps1"
         "Intune" = "Intune-Module-PS7.ps1"
@@ -226,310 +202,361 @@ function Test-NotEmpty {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         [AllowEmptyString()]
-        [object]$Value
+        $InputObject
     )
     
-    if ($null -eq $Value) { return $false }
-    if ($Value -is [string] -and [string]::IsNullOrWhiteSpace($Value)) { return $false }
-    if ($Value -is [array] -and $Value.Count -eq 0) { return $false }
-    if ($Value -is [hashtable] -and $Value.Count -eq 0) { return $false }
-    
-    return $true
+    return -not [string]::IsNullOrWhiteSpace($InputObject)
 }
 
-function Get-SafeString {
+function New-ProgressBar {
     <#
     .SYNOPSIS
-        Safe string conversion with null handling and truncation
-    #>
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $false)]
-        [AllowNull()]
-        [AllowEmptyString()]
-        [object]$Value,
-        
-        [Parameter(Mandatory = $false)]
-        [int]$MaxLength = -1,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$DefaultValue = ""
-    )
-    
-    # Handle null or empty
-    if (-not (Test-NotEmpty -Value $Value)) {
-        return $DefaultValue
-    }
-    
-    # Convert to string
-    $result = "$Value"
-    
-    # Truncate if needed
-    if ($MaxLength -gt 0 -and $result.Length -gt $MaxLength) {
-        $result = $result.Substring(0, $MaxLength)
-        Write-LogMessage -Message "String truncated to $MaxLength characters" -Type Warning -LogOnly
-    }
-    
-    return $result
-}
-
-function Test-EmailFormat {
-    <#
-    .SYNOPSIS
-        Simple email format validation without regex
+        Creates a simple text-based progress bar for visual feedback
     #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
-        [string]$EmailAddress
+        [int]$Current,
+        
+        [Parameter(Mandatory = $true)]
+        [int]$Total,
+        
+        [Parameter(Mandatory = $false)]
+        [int]$Width = 50
     )
     
-    # Basic validation using string methods only
-    if ([string]::IsNullOrWhiteSpace($EmailAddress)) {
-        return $false
-    }
+    $percent = $Current / $Total
+    $filledWidth = [math]::Floor($percent * $Width)
+    $emptyWidth = $Width - $filledWidth
     
-    $atCount = ($EmailAddress.ToCharArray() | Where-Object { $_ -eq '@' }).Count
-    if ($atCount -ne 1) {
-        return $false
-    }
+    $filled = "█" * $filledWidth
+    $empty = "░" * $emptyWidth
+    $percentText = "{0:P0}" -f $percent
     
-    $parts = $EmailAddress.Split('@')
-    if ($parts.Count -ne 2) {
-        return $false
-    }
-    
-    $localPart = $parts[0]
-    $domainPart = $parts[1]
-    
-    if ([string]::IsNullOrWhiteSpace($localPart) -or [string]::IsNullOrWhiteSpace($domainPart)) {
-        return $false
-    }
-    
-    if ($domainPart.IndexOf('.') -eq -1) {
-        return $false
-    }
-    
-    return $true
+    return "[$filled$empty] $percentText ($Current/$Total)"
 }
 
-# === Automatic Module Management Implementation ===
-function Install-RequiredModulesWithDependencies {
+# === PowerShell 7 Feature Detection ===
+function Test-PowerShell7Features {
     <#
     .SYNOPSIS
-        Implements automatic module dependency handling for PowerShell 7
+        Tests for PowerShell 7 specific features and reports availability
     #>
     [CmdletBinding()]
     param()
     
-    Write-LogMessage -Message "Starting automatic module dependency management..." -Type Info
-    Write-LogMessage -Message "PowerShell Version: $($PSVersionTable.PSVersion)" -Type Info
-    Write-LogMessage -Message "PowerShell Edition: $($PSVersionTable.PSEdition)" -Type Info
+    $features = @{
+        'Null-Coalescing Operators (??, ??=)' = $PSVersionTable.PSVersion -ge [Version]"7.0"
+        'Ternary Operator (? :)' = $PSVersionTable.PSVersion -ge [Version]"7.0"
+        'Pipeline Chain Operators (&&, ||)' = $PSVersionTable.PSVersion -ge [Version]"7.0"
+        'ForEach-Object -Parallel' = $PSVersionTable.PSVersion -ge [Version]"7.0"
+        'Cross-Platform Support' = $PSVersionTable.PSEdition -eq 'Core'
+    }
     
-    $moduleCount = $script:config.RequiredModules.Count
+    Write-Host "=== PowerShell 7 Features Check ===" -ForegroundColor Cyan
+    foreach ($feature in $features.GetEnumerator()) {
+        $status = if ($feature.Value) { "✓ Available" } else { "✗ Not Available" }
+        $color = if ($feature.Value) { "Green" } else { "Red" }
+        Write-Host "$($feature.Key): " -ForegroundColor Gray -NoNewline
+        Write-Host $status -ForegroundColor $color
+    }
+    Write-Host ""
+    
+    return $features
+}
+
+# ===================================================================
+# MENU DISPLAY AND NAVIGATION
+# ===================================================================
+
+function Show-Banner {
+    <#
+    .SYNOPSIS
+        Displays the application banner with PowerShell 7 styling
+    #>
+    Write-Host ""
+    Write-Host "+--------------------------------------------------+" -ForegroundColor Blue
+    Write-Host "|   Unified Microsoft 365 Tenant Setup (PS7)      |" -ForegroundColor Magenta
+    Write-Host "|           Single File Self-Contained            |" -ForegroundColor Magenta
+    Write-Host "+--------------------------------------------------+" -ForegroundColor Blue
+    Write-Host ""
+    Write-Host "PowerShell Version: " -ForegroundColor Cyan -NoNewline
+    Write-Host "$($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))" -ForegroundColor White
+    Write-Host ""
+    Write-Host "IMPORTANT: Ensure you have Global Administrator" -ForegroundColor Red
+    Write-Host "credentials for the target Microsoft 365 tenant" -ForegroundColor Red
+    Write-Host "before proceeding with this script." -ForegroundColor Red
+    Write-Host ""
+}
+
+function Show-Menu {
+    <#
+    .SYNOPSIS
+        Displays the main menu with enhanced PowerShell 7 features and conditional options
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$Title = 'Menu',
+        [array]$Options
+    )
+    
+    Clear-Host
+    Show-Banner
+    Write-Host "== $Title ==" -ForegroundColor Yellow
+    
+    # Show authentication status message if needed
+    if ($Title -like "*Authentication Required*") {
+        Write-Host ""
+        Write-Host "⚠️  Please connect to Microsoft Graph to access all features" -ForegroundColor Yellow
+        Write-Host "   Only basic options are available until authentication is complete" -ForegroundColor Gray
+    }
+    
+    Write-Host ""
+    
+    for ($i = 0; $i -lt $Options.Count; $i++) {
+        Write-Host " [$($i + 1)] " -ForegroundColor Yellow -NoNewline
+        Write-Host $Options[$i] -ForegroundColor White
+    }
+    
+    Write-Host ""
+    $selection = Read-Host "Enter your choice (1-$($Options.Count))"
+    
+    # Validate input is a number within range using simple type conversion
+    $selectionNumber = $selection -as [int]
+    if ($selectionNumber -and $selectionNumber -ge 1 -and $selectionNumber -le $Options.Count) {
+        return $selectionNumber
+    }
+    else {
+        Write-Host "Invalid selection. Please try again." -ForegroundColor Red
+        Start-Sleep -Seconds 2
+        return $null
+    }
+}
+
+# ===================================================================
+# MODULE MANAGEMENT AND DEPENDENCY HANDLING
+# ===================================================================
+
+function Install-RequiredModulesWithDependencies {
+    <#
+    .SYNOPSIS
+        Enhanced module installation with dependency resolution and version checking
+    #>
+    [CmdletBinding()]
+    param()
+    
+    Write-LogMessage -Message "Checking and installing required PowerShell modules..." -Type Info
+    
+    $moduleInstallationResults = @()
+    $totalModules = $script:config.RequiredModules.Count
     $currentModule = 0
-    $failedModules = @()
     
     foreach ($moduleConfig in $script:config.RequiredModules) {
         $currentModule++
         $moduleName = $moduleConfig.Name
-        $minVersion = $moduleConfig.MinVersion
-        $scope = $moduleConfig.Scope
         
-        Show-Progress -Current $currentModule -Total $moduleCount -Status "Processing module: $moduleName"
         
         try {
-            # Check if module is installed
+            # Check if module is already installed
             $installedModule = Get-Module -ListAvailable -Name $moduleName | 
-                               Sort-Object Version -Descending | 
-                               Select-Object -First 1
+                Where-Object { $_.Version -ge [Version]$moduleConfig.MinVersion } | 
+                Sort-Object Version -Descending | 
+                Select-Object -First 1
             
-            if (-not $installedModule) {
-                Write-LogMessage -Message "Installing $moduleName module (Scope: $scope)..." -Type Info
-                Install-Module -Name $moduleName -Scope $scope -Force -AllowClobber -AllowPrerelease:$false -ErrorAction Stop
-                Write-LogMessage -Message "$moduleName module installed successfully" -Type Success
+            if ($installedModule) {
+                Write-LogMessage -Message "Module $moduleName (v$($installedModule.Version)) is already installed and meets requirements" -Type Success -LogOnly
+                $moduleInstallationResults += @{
+                    Module = $moduleName
+                    Status = "Already Installed"
+                    Version = $installedModule.Version
+                    Success = $true
+                }
+                continue
             }
-            elseif ([version]$installedModule.Version -lt [version]$minVersion) {
-                Write-LogMessage -Message "Updating $moduleName from $($installedModule.Version) to minimum $minVersion..." -Type Info
-                Update-Module -Name $moduleName -Force -ErrorAction Stop
-                Write-LogMessage -Message "$moduleName module updated successfully" -Type Success
+            
+            # Install module if not present or version is too old
+            Write-LogMessage -Message "Installing module: $moduleName (minimum version: $($moduleConfig.MinVersion))" -Type Info
+            
+            $installParams = @{
+                Name = $moduleName
+                MinimumVersion = $moduleConfig.MinVersion
+                Scope = $moduleConfig.Scope
+                Force = $true
+                AllowClobber = $true
+                SkipPublisherCheck = $true
+                ErrorAction = 'Stop'
+            }
+            
+            Install-Module @installParams
+            
+            # Verify installation
+            $verifyModule = Get-Module -ListAvailable -Name $moduleName | 
+                Where-Object { $_.Version -ge [Version]$moduleConfig.MinVersion } | 
+                Sort-Object Version -Descending | 
+                Select-Object -First 1
+                
+            if ($verifyModule) {
+                Write-LogMessage -Message "Successfully installed $moduleName (v$($verifyModule.Version))" -Type Success
+                $moduleInstallationResults += @{
+                    Module = $moduleName
+                    Status = "Newly Installed"
+                    Version = $verifyModule.Version
+                    Success = $true
+                }
             }
             else {
-                Write-LogMessage -Message "$moduleName module already installed (Version: $($installedModule.Version))" -Type Info -LogOnly
+                throw "Module installation verification failed"
             }
-            
-            # Import the module if not already loaded
-            $loadedModule = Get-Module -Name $moduleName
-            if (-not $loadedModule) {
-                Write-LogMessage -Message "Importing $moduleName module..." -Type Info -LogOnly
-                Import-Module -Name $moduleName -Force -ErrorAction Stop
-                Write-LogMessage -Message "$moduleName module imported successfully" -Type Success -LogOnly
-            }
-            else {
-                Write-LogMessage -Message "$moduleName module already loaded" -Type Info -LogOnly
-            }
-            
         }
         catch {
-            Write-LogMessage -Message "Failed to install/import $moduleName module - $($_.Exception.Message)" -Type Error
-            $failedModules += $moduleName
+            Write-LogMessage -Message "Failed to install $moduleName - $($_.Exception.Message)" -Type Error
+            $moduleInstallationResults += @{
+                Module = $moduleName
+                Status = "Installation Failed"
+                Version = $null
+                Success = $false
+                Error = $_.Exception.Message
+            }
+        }
+    }
+    
+    # Display installation summary
+    Write-Host ""
+    Write-Host "=== Module Installation Summary ===" -ForegroundColor Cyan
+    
+    $successCount = $script:config.RequiredModules.Count
+    $totalCount = $script:config.RequiredModules.Count
+    
+    Write-Host "Successfully processed: $successCount/$totalCount modules" -ForegroundColor Green
+    
+    foreach ($result in $moduleInstallationResults) {
+        $statusColor = if ($result.Success) { "Green" } else { "Red" }
+        $statusText = if ($result.Success) { "✓" } else { "✗" }
+        
+        Write-Host "$statusText $($result.Module) " -ForegroundColor $statusColor -NoNewline
+        if ($result.Success -and $result.Version) {
+            Write-Host "(v$($result.Version)) " -ForegroundColor Gray -NoNewline
+        }
+        Write-Host "- $($result.Status)" -ForegroundColor Gray
+        
+        if (-not $result.Success -and $result.Error) {
+            Write-Host "   Error: $($result.Error)" -ForegroundColor Red
         }
     }
     
     Write-Host ""
     
-    if ($failedModules.Count -gt 0) {
-        Write-LogMessage -Message "Failed to install the following modules: $($failedModules -join ', ')" -Type Error
-        Write-LogMessage -Message "Some features may not work correctly. Please install these modules manually." -Type Warning
-        return $false
-    }
-    
-    Write-LogMessage -Message "All required modules installed and loaded successfully" -Type Success
-    return $true
+    # Return true if authentication module is available
+return $successCount -gt 0
 }
 
-# === Authentication Functions with Force Login ===
+# ===================================================================
+# GRAPH AUTHENTICATION WITH FORCE LOGIN
+# ===================================================================
+
 function Connect-ToGraphWithForceAuth {
     <#
     .SYNOPSIS
-        Connects to Microsoft Graph with forced authentication (no caching)
+        Connects to Microsoft Graph with forced authentication and tenant verification
     #>
     [CmdletBinding()]
     param()
     
     try {
-        # Always disconnect any existing sessions to force fresh login
+        Write-LogMessage -Message "Initializing Microsoft Graph connection..." -Type Info
+        
+        # Disconnect any existing sessions to force fresh authentication
         $existingContext = Get-MgContext -ErrorAction SilentlyContinue
         if ($existingContext) {
             Write-LogMessage -Message "Disconnecting existing Microsoft Graph session..." -Type Info
             Disconnect-MgGraph | Out-Null
         }
         
-        Write-LogMessage -Message "Connecting to Microsoft Graph (Force Authentication)..." -Type Info
-        Write-LogMessage -Message "Required scopes: $($script:config.GraphScopes -join ', ')" -Type Info
+        # Force authentication with device code flow (works reliably across environments)
+        Write-LogMessage -Message "Connecting to Microsoft Graph with forced authentication..." -Type Info
         Write-Host ""
-        Write-Host "You will be prompted to sign in. Please use Global Administrator credentials." -ForegroundColor Yellow
+        Write-Host "You will be prompted to sign in to Microsoft Graph." -ForegroundColor Yellow
+        Write-Host "Please use Global Administrator credentials for your Microsoft 365 tenant." -ForegroundColor Yellow
         Write-Host ""
         
-        # Force interactive authentication by disconnecting first and using NoWelcome
-        Connect-MgGraph -Scopes $script:config.GraphScopes -NoWelcome -ErrorAction Stop
+        # Connect with comprehensive scopes for all tenant operations
+        Connect-MgGraph -Scopes $script:config.GraphScopes -NoWelcome
         
-        $context = Get-MgContext
-        if (-not $context) {
-            throw "Failed to establish Microsoft Graph context after connection"
+        # Verify connection and get context
+        $mgContext = Get-MgContext
+        if (-not $mgContext) {
+            throw "Failed to establish Microsoft Graph connection"
         }
         
         Write-LogMessage -Message "Successfully connected to Microsoft Graph" -Type Success
-        Write-LogMessage -Message "Account: $($context.Account)" -Type Info
-        Write-LogMessage -Message "Tenant ID: $($context.TenantId)" -Type Info
-        Write-LogMessage -Message "Environment: $($context.Environment)" -Type Info
+        Write-LogMessage -Message "Connected as: $($mgContext.Account)" -Type Info
+        Write-LogMessage -Message "Tenant ID: $($mgContext.TenantId)" -Type Info
         
-        # Verify tenant domain
-        $verified = Test-TenantDomainPS7
-        if (-not $verified) {
-            Write-LogMessage -Message "Tenant domain verification failed. Please connect to the correct tenant." -Type Error
-            Disconnect-MgGraph | Out-Null
-            return $false
-        }
+        # Get and verify tenant information
+        return Confirm-TenantDomain
         
-        return $true
     }
     catch {
-        Write-LogMessage -Message "Failed to connect to Microsoft Graph - $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Microsoft Graph connection failed - $($_.Exception.Message)" -Type Error
         return $false
     }
 }
 
-function Test-TenantDomainPS7 {
+function Confirm-TenantDomain {
     <#
     .SYNOPSIS
-        Enhanced tenant domain verification with PowerShell 7 features
+        Verifies tenant domain and stores tenant information for use throughout the script
     #>
     [CmdletBinding()]
     param()
     
     try {
-        Write-LogMessage -Message "Verifying tenant domain and collecting organization information..." -Type Info
+        Write-LogMessage -Message "Retrieving tenant domain information..." -Type Info
         
-        # Get organization details with error handling
-        $organization = Get-MgOrganization -ErrorAction Stop
+        # Get organization information
+        $organization = Get-MgOrganization
         if (-not $organization) {
-            throw "Unable to retrieve organization information from Microsoft Graph"
+            throw "Failed to retrieve organization information"
         }
         
-        $verifiedDomains = $organization.VerifiedDomains
-        $defaultDomain = $verifiedDomains | Where-Object { $_.IsDefault -eq $true }
+        # Get primary domain
+        $domains = Get-MgDomain
+        $defaultDomain = $domains | Where-Object { $_.IsDefault -eq $true }
         
         if (-not $defaultDomain) {
-            throw "No default domain found for this tenant"
+            throw "Failed to identify default domain"
         }
         
         Write-Host ""
         Write-Host "=== Tenant Information ===" -ForegroundColor Cyan
-        Write-Host "Organization Name: " -ForegroundColor Gray -NoNewline
+        Write-Host "Organization: " -ForegroundColor Gray -NoNewline
         Write-Host "$($organization.DisplayName)" -ForegroundColor White
         Write-Host "Default Domain: " -ForegroundColor Gray -NoNewline
-        Write-Host "$($defaultDomain.Name)" -ForegroundColor White
+        Write-Host "$($defaultDomain.Id)" -ForegroundColor White
         Write-Host "Tenant ID: " -ForegroundColor Gray -NoNewline
         Write-Host "$($organization.Id)" -ForegroundColor White
-        Write-Host "Verified Domains: " -ForegroundColor Gray -NoNewline
-        Write-Host "$($verifiedDomains.Name -join ', ')" -ForegroundColor White
         Write-Host ""
         
-        $confirmation = Read-Host "Is this the correct tenant for configuration? (Y/N)"
+        $confirmation = Read-Host "Continue with this tenant configuration? (Y/N)"
         if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
-            Write-LogMessage -Message "Tenant verification declined by user" -Type Warning
-            Write-Host ""
-            Write-Host "Please connect to the correct tenant." -ForegroundColor Yellow
-            
-            # Ask if user wants to reconnect
-            $reconnect = Read-Host "Do you want to sign in to a different tenant? (Y/N)"
-            if ($reconnect -eq 'Y' -or $reconnect -eq 'y') {
-                # Disconnect current session
-                Disconnect-MgGraph | Out-Null
-                Write-LogMessage -Message "Disconnected from incorrect tenant. Please reconnect to the correct tenant." -Type Info
-                
-                # Reconnect with fresh authentication
-                Write-Host ""
-                Write-Host "You will be prompted to sign in again. Please use credentials for the correct tenant." -ForegroundColor Yellow
-                Write-Host ""
-                
-                Connect-MgGraph -Scopes $script:config.GraphScopes -NoWelcome -ErrorAction Stop
-                
-                # Recursively call this function to verify the new tenant
-                return Test-TenantDomainPS7
-            }
-            else {
-                Write-LogMessage -Message "User chose not to reconnect. Tenant verification failed." -Type Warning
-                return $false
-            }
+            return $false
         }
         
-        # Save tenant state information with enhanced data
+        # Save tenant state information
         $script:TenantState = @{
-            DefaultDomain = $defaultDomain.Name
+            DefaultDomain = $defaultDomain.Id
             TenantName = $organization.DisplayName
             TenantId = $organization.Id
-            VerifiedDomains = $verifiedDomains.Name
             CreatedGroups = @{}
+            CreatedAdminAccounts = @{}
             AdminEmail = ""
-            LastVerified = Get-Date
         }
         
         # Get admin email for ownership assignments
-        Write-Host ""
         $script:TenantState.AdminEmail = Read-Host "Enter the email address for the Global Admin account"
-        
-        # Validate email format using our custom function
-        if (-not (Test-EmailFormat -EmailAddress $script:TenantState.AdminEmail)) {
-            Write-LogMessage -Message "Warning: Admin email format may be invalid" -Type Warning
-        }
-        
-        Write-LogMessage -Message "Tenant verification completed successfully" -Type Success
-        Write-LogMessage -Message "Tenant: $($script:TenantState.TenantName) ($($script:TenantState.DefaultDomain))" -Type Info
         
         return $true
     }
@@ -539,16 +566,22 @@ function Test-TenantDomainPS7 {
     }
 }
 
-# === GitHub Module Functions ===
+# ===================================================================
+# GITHUB MODULE LOADING SYSTEM
+# ===================================================================
+
 function Initialize-ModuleCache {
     <#
     .SYNOPSIS
-        Initializes the GitHub module cache directory
+        Initializes the local cache directory for GitHub modules
     #>
+    [CmdletBinding()]
+    param()
+    
     try {
         if (-not (Test-Path -Path $script:GitHubConfig.CacheDirectory)) {
             New-Item -Path $script:GitHubConfig.CacheDirectory -ItemType Directory -Force | Out-Null
-            Write-LogMessage -Message "Created module cache directory: $($script:GitHubConfig.CacheDirectory)" -Type Info
+            Write-LogMessage -Message "Created module cache directory: $($script:GitHubConfig.CacheDirectory)" -Type Info -LogOnly
         }
         return $true
     }
@@ -674,12 +707,7 @@ function Invoke-ModuleOperation {
                 # Dot source the module
                 . $localPath
                 
-                # Check if function exists
-                if (-not (Get-Command -Name $FunctionName -ErrorAction SilentlyContinue)) {
-                    throw "Function '$FunctionName' not found in module '$ModuleName'"
-                }
-                
-                # Call the function with parameters
+                # Call the function with parameters if provided
                 if ($Parameters.Count -gt 0) {
                     & $FunctionName @Parameters
                 }
@@ -688,248 +716,103 @@ function Invoke-ModuleOperation {
                 }
             }
             catch {
-                Write-LogMessage -Message "Error executing $FunctionName in $ModuleName - $($_.Exception.Message)" -Type Error
+                Write-LogMessage -Message "Error executing function $FunctionName in module $ModuleName - $($_.Exception.Message)" -Type Error
                 return $false
             }
         }
         
-        if ($result) {
-            Write-LogMessage -Message "$ModuleName operation completed successfully" -Type Success
-            return $true
-        }
-        else {
-            Write-LogMessage -Message "$ModuleName operation completed with warnings or returned false" -Type Warning
-            return $false
-        }
+        return $result
     }
     catch {
-        Write-LogMessage -Message "Failed to execute $ModuleName operation - $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Fatal error in module operation - $($_.Exception.Message)" -Type Error
         return $false
     }
 }
 
-# === Excel Data Debugging Function ===
+# ===================================================================
+# DEBUG AND UTILITIES
+# ===================================================================
+
 function Debug-ExcelDataPS7 {
     <#
     .SYNOPSIS
-        Enhanced Excel data debugging with PowerShell 7 features
+        Enhanced Excel debugging function with PowerShell 7 features and on-demand module installation
     #>
     [CmdletBinding()]
     param()
     
+    Write-LogMessage -Message "Excel Debug Mode - PowerShell 7 Enhanced" -Type Info
+    
+    # Check if ImportExcel module is available, install if needed
+    $excelModule = Get-Module -ListAvailable -Name ImportExcel
+    if (-not $excelModule) {
+        Write-LogMessage -Message "ImportExcel module not found. Installing..." -Type Warning
+        try {
+            Install-Module -Name ImportExcel -Force -Scope CurrentUser -AllowClobber
+            Write-LogMessage -Message "ImportExcel module installed successfully" -Type Success
+        }
+        catch {
+            Write-LogMessage -Message "Failed to install ImportExcel module. Debug function may not work properly." -Type Error
+            return
+        }
+    }
+    
+    # Import the module
+    Import-Module ImportExcel -Force
+    
+    # Get Excel file path
+    $excelPath = Read-Host "Enter the full path to your Excel file"
+    
+    if (-not (Test-Path -Path $excelPath)) {
+        Write-LogMessage -Message "File not found: $excelPath" -Type Error
+        return
+    }
+    
     try {
-        Write-LogMessage -Message "Starting Excel data debug process..." -Type Info
+        Write-LogMessage -Message "Reading Excel file structure..." -Type Info
         
-        # Check if ImportExcel module is available, install if needed
-        if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
-            Write-LogMessage -Message "ImportExcel module not found. Installing..." -Type Info
-            try {
-                Install-Module -Name ImportExcel -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
-                Write-LogMessage -Message "ImportExcel module installed successfully" -Type Success
-            }
-            catch {
-                Write-LogMessage -Message "Failed to install ImportExcel module: $($_.Exception.Message)" -Type Error
-                return
-            }
-        }
+        # Get workbook info
+        $workbook = Import-Excel -Path $excelPath -WorksheetName (Get-ExcelSheetInfo -Path $excelPath)[0].Name -NoHeader
         
-        # Import the module if not already loaded
-        if (-not (Get-Module -Name ImportExcel)) {
-            Import-Module -Name ImportExcel -Force -ErrorAction Stop
-        }
+        Write-Host ""
+        Write-Host "=== Excel File Analysis ===" -ForegroundColor Cyan
+        Write-Host "File: $excelPath" -ForegroundColor White
+        Write-Host "Rows found: $($workbook.Count)" -ForegroundColor White
         
-        # File selection with PowerShell 7 enhanced dialog
-        Add-Type -AssemblyName System.Windows.Forms
-        $openFileDialog = [System.Windows.Forms.OpenFileDialog]::new()
-        $openFileDialog.Title = "Select Excel File for Debug"
-        $openFileDialog.Filter = "Excel Files (*.xlsx;*.xls)|*.xlsx;*.xls|All Files (*.*)|*.*"
-        $openFileDialog.InitialDirectory = [Environment]::GetFolderPath("Desktop")
+        # Show first few rows
+        Write-Host ""
+        Write-Host "First 5 rows:" -ForegroundColor Yellow
+        $workbook | Select-Object -First 5 | Format-Table -AutoSize
         
-        if ($openFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-            $excelPath = $openFileDialog.FileName
-            Write-LogMessage -Message "Selected file: $excelPath" -Type Info
-            
-            try {
-                # Import Excel data with enhanced error handling
-                $excelData = Import-Excel -Path $excelPath -ErrorAction Stop
-                
-                if (-not $excelData -or $excelData.Count -eq 0) {
-                    Write-LogMessage -Message "Excel file is empty or contains no data" -Type Warning
-                    return
-                }
-                
-                # Display file information
-                Write-Host ""
-                Write-Host "=== Excel File Debug Information ===" -ForegroundColor Cyan
-                Write-Host "File Path: " -ForegroundColor Gray -NoNewline
-                Write-Host "$excelPath" -ForegroundColor White
-                Write-Host "Total Rows: " -ForegroundColor Gray -NoNewline
-                Write-Host "$($excelData.Count)" -ForegroundColor White
-                
-                # Get column names
-                $columnNames = $excelData[0].PSObject.Properties.Name
-                Write-Host "Columns Found: " -ForegroundColor Gray -NoNewline
-                Write-Host "$($columnNames -join ', ')" -ForegroundColor White
-                Write-Host ""
-                
-                # Display first few rows
-                Write-Host "=== First 3 Rows Preview ===" -ForegroundColor Yellow
-                $previewRows = $excelData | Select-Object -First 3
-                $previewRows | Format-Table -AutoSize
-                
-                # Check for common user creation columns
-                $requiredColumns = @('FirstName', 'LastName', 'Email', 'Department')
-                $missingColumns = $requiredColumns | Where-Object { $_ -notin $columnNames }
-                
-                if ($missingColumns.Count -gt 0) {
-                    Write-Host "=== Missing Required Columns ===" -ForegroundColor Red
-                    $missingColumns | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
-                }
-                else {
-                    Write-Host "=== All Required Columns Present ===" -ForegroundColor Green
-                }
-                
-                # Check for password column specifically
-                $passwordColumns = $columnNames | Where-Object { $_ -like "*password*" -or $_ -like "*pwd*" }
-                if ($passwordColumns.Count -gt 0) {
-                    Write-Host ""
-                    Write-Host "=== Password Columns Found ===" -ForegroundColor Yellow
-                    $passwordColumns | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
-                    
-                    # Check if passwords are populated
-                    $passwordColumn = $passwordColumns[0]
-                    $emptyPasswords = $excelData | Where-Object { [string]::IsNullOrWhiteSpace($_.$passwordColumn) }
-                    
-                    Write-Host "Rows with empty passwords: " -ForegroundColor Gray -NoNewline
-                    Write-Host "$($emptyPasswords.Count)" -ForegroundColor $(if ($emptyPasswords.Count -gt 0) { 'Red' } else { 'Green' })
-                }
-                else {
-                    Write-Host ""
-                    Write-Host "=== No Password Columns Found ===" -ForegroundColor Red
-                    Write-Host "Consider adding a 'Password' or 'InitialPassword' column" -ForegroundColor Yellow
-                }
-                
-                Write-LogMessage -Message "Excel debug completed successfully" -Type Success
-            }
-            catch {
-                Write-LogMessage -Message "Error reading Excel file: $($_.Exception.Message)" -Type Error
-            }
+        # Look for password-related columns
+        $headers = $workbook[0].PSObject.Properties.Name
+        $passwordColumns = $headers | Where-Object { $_ -like "*password*" -or $_ -like "*pwd*" -or $_ -like "*pass*" }
+        
+        if ($passwordColumns) {
+            Write-Host ""
+            Write-Host "Potential password columns found:" -ForegroundColor Green
+            $passwordColumns | ForEach-Object { Write-Host "  - $_" -ForegroundColor White }
         }
         else {
-            Write-LogMessage -Message "File selection cancelled by user" -Type Info
+            Write-Host ""
+            Write-Host "No obvious password columns found" -ForegroundColor Red
+            Write-Host "Available columns:" -ForegroundColor Yellow
+            $headers | ForEach-Object { Write-Host "  - $_" -ForegroundColor White }
         }
     }
     catch {
-        Write-LogMessage -Message "Error in Excel debug process: $($_.Exception.Message)" -Type Error
-    }
-}
-
-# === PowerShell 7 Feature Testing ===
-function Test-PowerShell7Features {
-    <#
-    .SYNOPSIS
-        Tests PowerShell 7 specific features availability
-    #>
-    [CmdletBinding()]
-    param()
-    
-    $features = @{
-        'Parallel ForEach' = $null -ne (Get-Command -Name 'ForEach-Object' -ParameterName 'Parallel' -ErrorAction SilentlyContinue)
-        'Ternary Operator' = $PSVersionTable.PSVersion -ge [version]'7.0'
-        'Null Coalescing' = $PSVersionTable.PSVersion -ge [version]'7.0'
-        'Pipeline Chain Operators' = $PSVersionTable.PSVersion -ge [version]'7.0'
-        'Updated Get-Error' = $null -ne (Get-Command -Name 'Get-Error' -ErrorAction SilentlyContinue)
-        'Cross-Platform Support' = $PSVersionTable.PSEdition -eq 'Core'
-    }
-    
-    Write-Host "=== PowerShell 7 Features Check ===" -ForegroundColor Cyan
-    foreach ($feature in $features.GetEnumerator()) {
-        $status = if ($feature.Value) { "✓ Available" } else { "✗ Not Available" }
-        $color = if ($feature.Value) { "Green" } else { "Red" }
-        Write-Host "$($feature.Key): " -ForegroundColor Gray -NoNewline
-        Write-Host $status -ForegroundColor $color
-    }
-    Write-Host ""
-    
-    return $features
-}
-
-# ===================================================================
-# MENU DISPLAY AND NAVIGATION
-# ===================================================================
-
-function Show-Banner {
-    <#
-    .SYNOPSIS
-        Displays the application banner with PowerShell 7 styling
-    #>
-    Write-Host ""
-    Write-Host "+--------------------------------------------------+" -ForegroundColor Blue
-    Write-Host "|   Unified Microsoft 365 Tenant Setup (PS7)      |" -ForegroundColor Magenta
-    Write-Host "|           Single File Self-Contained            |" -ForegroundColor Magenta
-    Write-Host "+--------------------------------------------------+" -ForegroundColor Blue
-    Write-Host ""
-    Write-Host "PowerShell Version: " -ForegroundColor Cyan -NoNewline
-    Write-Host "$($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))" -ForegroundColor White
-    Write-Host ""
-    Write-Host "IMPORTANT: Ensure you have Global Administrator" -ForegroundColor Red
-    Write-Host "credentials for the target Microsoft 365 tenant" -ForegroundColor Red
-    Write-Host "before proceeding with this script." -ForegroundColor Red
-    Write-Host ""
-}
-
-function Show-Menu {
-    <#
-    .SYNOPSIS
-        Displays the main menu with enhanced PowerShell 7 features and conditional options
-    #>
-    [CmdletBinding()]
-    param (
-        [string]$Title = 'Menu',
-        [array]$Options
-    )
-    
-    Clear-Host
-    Show-Banner
-    Write-Host "== $Title ==" -ForegroundColor Yellow
-    
-    # Show authentication status message if needed
-    if ($Title -like "*Authentication Required*") {
-        Write-Host ""
-        Write-Host "⚠️  Please connect to Microsoft Graph to access all features" -ForegroundColor Yellow
-        Write-Host "   Only basic options are available until authentication is complete" -ForegroundColor Gray
-    }
-    
-    Write-Host ""
-    
-    for ($i = 0; $i -lt $Options.Count; $i++) {
-        Write-Host " [$($i + 1)] " -ForegroundColor Yellow -NoNewline
-        Write-Host $Options[$i] -ForegroundColor White
-    }
-    
-    Write-Host ""
-    $selection = Read-Host "Enter your choice (1-$($Options.Count))"
-    
-    # Validate input is a number within range using simple type conversion
-    $selectionNumber = $selection -as [int]
-    if ($selectionNumber -and $selectionNumber -ge 1 -and $selectionNumber -le $Options.Count) {
-        return $selectionNumber
-    }
-    else {
-        Write-Host "Invalid selection. Please try again." -ForegroundColor Red
-        Start-Sleep -Seconds 2
-        return $null
+        Write-LogMessage -Message "Error reading Excel file - $($_.Exception.Message)" -Type Error
     }
 }
 
 # ===================================================================
-# MAIN APPLICATION ENTRY POINT
+# MAIN APPLICATION LOGIC
 # ===================================================================
 
 function Start-Setup {
     <#
     .SYNOPSIS
-        Main application entry point with enhanced error handling
+        Main entry point for the Unified Microsoft 365 Tenant Setup Utility
     #>
     [CmdletBinding()]
     param()
@@ -937,11 +820,15 @@ function Start-Setup {
     try {
         # Initialize logging
         Initialize-Logging
-        Write-LogMessage -Message "Unified Microsoft 365 Tenant Setup Utility (PowerShell 7 Self-Contained) started" -Type Info
+        Write-LogMessage -Message "Unified Microsoft 365 Tenant Setup Utility - PowerShell 7 Self-Contained Version started" -Type Info
         
         # Test PowerShell 7 features
-        Write-LogMessage -Message "Testing PowerShell 7 features..." -Type Info
-        $features = Test-PowerShell7Features
+        Write-LogMessage -Message "Testing PowerShell 7 feature compatibility..." -Type Info
+        $ps7Features = Test-PowerShell7Features
+        
+        if ($PSVersionTable.PSVersion -lt [Version]"7.0") {
+            Write-LogMessage -Message "This script is optimized for PowerShell 7.0 or later. Some features may not work." -Type Warning
+        }
         
         # Initialize module cache
         $cacheInitialized = Initialize-ModuleCache
@@ -980,6 +867,7 @@ function Start-Setup {
                     "Connect to Microsoft Graph and Verify Tenant"
                     "Refresh Modules from GitHub"
                     "Create Security and License Groups"
+                    "Create Admin Accounts and Roles"
                     "Configure Conditional Access Policies"
                     "Set Up SharePoint Sites"
                     "Configure Intune Policies"
@@ -1051,6 +939,15 @@ function Start-Setup {
                         Read-Host "Press Enter to continue"
                     }
                     4 {
+                        # Create Admin Accounts
+                        Write-LogMessage -Message "Executing: Create Admin Accounts and Roles" -Type Info
+                        $success = Invoke-ModuleOperation -ModuleName "AdminAccounts" -FunctionName "New-TenantAdminAccounts"
+                        if ($success) {
+                            Write-LogMessage -Message "Admin accounts creation completed successfully" -Type Success
+                        }
+                        Read-Host "Press Enter to continue"
+                    }
+                    5 {
                         # Configure CA policies
                         Write-LogMessage -Message "Executing: Configure Conditional Access Policies" -Type Info
                         if (-not $script:TenantState -or -not $script:TenantState.CreatedGroups) {
@@ -1064,7 +961,7 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    5 {
+                    6 {
                         # Set up SharePoint
                         Write-LogMessage -Message "Executing: Set Up SharePoint Sites" -Type Info
                         $success = Invoke-ModuleOperation -ModuleName "SharePoint" -FunctionName "New-TenantSharePoint"
@@ -1073,7 +970,7 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    6 {
+                    7 {
                         # Configure Intune
                         Write-LogMessage -Message "Executing: Configure Intune Policies" -Type Info
                         $success = Invoke-ModuleOperation -ModuleName "Intune" -FunctionName "New-TenantIntune"
@@ -1082,7 +979,7 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    7 {
+                    8 {
                         # Create users
                         Write-LogMessage -Message "Executing: Create Users from Excel" -Type Info
                         $success = Invoke-ModuleOperation -ModuleName "Users" -FunctionName "New-TenantUsers"
@@ -1091,7 +988,7 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    8 {
+                    9 {
                         # Create Admin Helpdesk Role
                         Write-LogMessage -Message "Executing: Create Admin Helpdesk Role" -Type Info
                         $success = Invoke-ModuleOperation -ModuleName "AdminCreation" -FunctionName "New-AdminHelpdeskRole"
@@ -1100,7 +997,7 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    9 {
+                    10 {
                         # Generate documentation
                         Write-LogMessage -Message "Executing: Generate Documentation" -Type Info
                         if (-not $script:TenantState) {
@@ -1114,13 +1011,13 @@ function Start-Setup {
                         }
                         Read-Host "Press Enter to continue"
                     }
-                    10 {
+                    11 {
                         # Debug Excel file
                         Write-LogMessage -Message "Executing: Debug Excel File" -Type Info
                         Debug-ExcelDataPS7
                         Read-Host "Press Enter to continue"
                     }
-                    11 {
+                    12 {
                         # Exit
                         $exitScript = $true
                         Write-LogMessage -Message "Unified Microsoft 365 Tenant Setup Utility ended by user request" -Type Info
