@@ -72,9 +72,29 @@ function New-TenantIntune {
     #>
     param(
         [Parameter(Mandatory = $false)]
-        [switch]$UpdateExistingPolicies = $true
+        [switch]$UpdateExistingPolicies = $true,
+        
+        [Parameter(Mandatory = $false)]
+        [hashtable]$TenantState
     )
+    # Initialize TenantState from parameter or create new
+    if ($TenantState) {
+        $script:TenantState = $TenantState
+        Write-LogMessage -Message "Using TenantState from parent script" -Type Info -LogOnly
+    } else {
+        $script:TenantState = @{
+            CreatedGroups = @{}
+            DefaultDomain = ""
+            TenantName = ""
+            TenantId = ""
+        }
+        Write-LogMessage -Message "Created new TenantState" -Type Info -LogOnly
+    }
     
+    # Ensure CreatedGroups exists
+    if (-not $script:TenantState.CreatedGroups) {
+        $script:TenantState.CreatedGroups = @{}
+    }
     Write-LogMessage -Message "Starting COMPREHENSIVE Intune configuration..." -Type Info
     if ($UpdateExistingPolicies) {
         Write-LogMessage -Message "Mode: Will update group assignments for existing policies" -Type Info

@@ -307,9 +307,15 @@ function Invoke-ModuleFunction {
         
         Write-LogMessage -Message "Executing: $ModuleName -> $FunctionName" -Type Info
         
-        # Dot-source and execute
+        # Dot-source and execute with TenantState parameter
         . $localPath
-        $result = & $FunctionName
+        
+        # Pass TenantState if it exists
+        if ($script:TenantState) {
+            $result = & $FunctionName -TenantState $script:TenantState
+        } else {
+            $result = & $FunctionName
+        }
         
         Write-LogMessage -Message "Module execution completed" -Type Success
         return $result
