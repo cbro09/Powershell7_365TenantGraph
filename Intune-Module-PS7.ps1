@@ -273,1198 +273,1141 @@ function New-TenantIntune {
         # POLICY 1: WINDOWS DEFENDER ANTIVIRUS - ALL 26+ COMPREHENSIVE SETTINGS
         # ===================================================================
         Write-LogMessage -Message "Creating comprehensive Windows Defender policy with 26+ settings..." -Type Info
-        
-        $policyName = "Windows Defender Antivirus"
-        if (Test-PolicyExists -PolicyName $policyName) {
-            Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
-            $policies += @{ name = $policyName; id = "existing" }
-        }
-        else {
-            try {
-                $body = @{
-    name = $policyName
-    description = "Comprehensive Windows Defender policy"
-    platforms = "windows10"
-    technologies = "mdm"
-    settings = @(
-        @{
-            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-            settingInstance = @{
-                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                settingDefinitionId = "device_vendor_msft_policy_config_defender_puaprotection"
-                choiceSettingValue = @{
-                    value = "device_vendor_msft_policy_config_defender_puaprotection_1"
-                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 2: Real-time Protection
-                        @{
-                            id = "1"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowrealtimemonitoring"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowrealtimemonitoring_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 3: Cloud Extended Timeout  
-                        @{
-                            id = "2"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_cloudextendedtimeout"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 50
-                                }
-                            }
-                        },
-                        # Setting 4: Enable Network Protection
-                        @{
-                            id = "3"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_enablenetworkprotection"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_enablenetworkprotection_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 5: Behavior Monitoring
-                        @{
-                            id = "4"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowbehaviormonitoring"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowbehaviormonitoring_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 6: Allow Full Scan Removable Drive Scanning
-                        @{
-                            id = "5"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowfullscanremovabledrivescanning"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowfullscanremovabledrivescanning_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 7: Check for Signatures Before Running Scan
-                        @{
-                            id = "6"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_checkforsignaturesbeforerunningscan"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_checkforsignaturesbeforerunningscan_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 8: Allow Intrusion Prevention System
-                        @{
-                            id = "7"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowintrusionpreventionsystem"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowintrusionpreventionsystem_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 9: Allow Script Scanning
-                        @{
-                            id = "8"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowscriptscanning"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowscriptscanning_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 10: Allow Archive Scanning
-                        @{
-                            id = "9"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowarchivescanning"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowarchivescanning_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 11: Allow Email Scanning
-                        @{
-                            id = "10"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowemailscanning"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowemailscanning_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 12: Allow Cloud Protection
-                        @{
-                            id = "11"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowcloudprotection"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowcloudprotection_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 13: Submit Samples Consent
-                        @{
-                            id = "12"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_submitsamplesconsent"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_submitsamplesconsent_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 14: Allow On Access Protection
-                        @{
-                            id = "13"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowonaccessprotection"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_allowonaccessprotection_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 15: Real Time Scan Direction
-                        @{
-                            id = "14"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_realtimescandirection"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_realtimescandirection_0"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 16: Scan Mapped Network Drives During Full Scan
-                        @{
-                            id = "15"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_scanmappednetworkdrivesduringfullscan"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_scanmappednetworkdrivesduringfullscan_0"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 17: Scan Parameters
-                        @{
-                            id = "16"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_scanparameter"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_scanparameter_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 18: Schedule Scan Day
-                        @{
-                            id = "17"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulescanday"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_schedulescanday_0"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 19: Schedule Scan Time
-                        @{
-                            id = "18"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulescantime"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 120
-                                }
-                            }
-                        },
-                        # Setting 20: Schedule Quick Scan Time
-                        @{
-                            id = "19"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulequickscantime"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 120
-                                }
-                            }
-                        },
-                        # Setting 21: Signature Update Interval
-                        @{
-                            id = "20"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_signatureupdateinterval"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 4
-                                }
-                            }
-                        },
-                        # Setting 22: Threat Severity Default Action Critical
-                        @{
-                            id = "21"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactioncritical"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactioncritical_2"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 23: Threat Severity Default Action High
-                        @{
-                            id = "22"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionhigh"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionhigh_2"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 24: Threat Severity Default Action Medium
-                        @{
-                            id = "23"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionmedium"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionmedium_2"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 25: Threat Severity Default Action Low
-                        @{
-                            id = "24"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionlow"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionlow_2"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 26: Disable Catchup Full Scan
-                        @{
-                            id = "25"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_disablecatchupfullscan"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_disablecatchupfullscan_1"
-                                    children = @()
-                                }
-                            }
+
+$policyName = "Windows Defender Antivirus"
+if (Test-PolicyExists -PolicyName $policyName) {
+    Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
+    $policies += @{ name = $policyName; id = "existing" }
+}
+else {
+    try {
+        $body = @{
+            name = $policyName
+            description = "Comprehensive Windows Defender Antivirus configuration with 26+ complete security settings"
+            platforms = "windows10"
+            technologies = "mdm"
+            settings = @(
+                # Setting 1: PUA Protection
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_puaprotection"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_puaprotection_1"
+                            children = @()
                         }
-                    )
-                }
-                
-                $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
-                Write-LogMessage -Message "Created comprehensive Windows Defender policy with 26 settings" -Type Success
-                $policies += $result
-            }
-            catch {
-                Write-LogMessage -Message "Failed to create Windows Defender policy - $($_.Exception.Message)" -Type Error
-            }
-        }
-        
-        # ===================================================================
-        # POLICY 2: BITLOCKER POLICY - ALL 13 COMPREHENSIVE SETTINGS
-        # ===================================================================
-        Write-LogMessage -Message "Creating comprehensive BitLocker policy with ALL 13 settings..." -Type Info
-        
-        $policyName = "Enable Bitlocker"
-        if (Test-PolicyExists -PolicyName $policyName) {
-            Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
-            $policies += @{ name = $policyName; id = "existing" }
-        }
-        else {
-            try {
-                $body = @{
-                    name = $policyName
-                    description = "Comprehensive BitLocker drive encryption configuration with ALL 13 detailed settings"
-                    platforms = "windows10"
-                    technologies = "mdm"
-                    settings = @(
-                        # Setting 1: Require Device Encryption
-                        @{
-                            id = "0"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_requiredeviceencryption"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_requiredeviceencryption_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 2: Allow warning for other disk encryption
-                        @{
-                            id = "1"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption_0"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_allowstandarduserencryption"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_allowstandarduserencryption_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 3: Encryption Method By Drive Type
-                        @{
-                            id = "2"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsosdropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsosdropdown_name_7"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsfdvdropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsfdvdropdown_name_7"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsrdvdropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsrdvdropdown_name_4"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 4: System drives encryption type
-                        @{
-                            id = "3"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesencryptiontype"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_systemdrivesencryptiontype_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesencryptiontype_osencryptiontypedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesencryptiontype_osencryptiontypedropdown_name_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 5: System drives require startup authentication
-                        @{
-                            id = "4"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_systemdrivesminimumpinlength"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_systemdrivesminimumpinlength_6"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configurepinusagedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configurepinusagedropdown_name_0"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configuretpmusagedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configuretpmusagedropdown_name_2"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 6: System drives minimum PIN length
-                        @{
-                            id = "5" 
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesminimumpinlength"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_systemdrivesminimumpinlength_0"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 7: System drives enhanced PIN
-                        @{
-                            id = "6"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesenhancedpin"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_systemdrivesenhancedpin_0"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 8: System drives recovery options
-                        @{
-                            id = "7"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osallowdra_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osallowdra_name_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverypasswordusagedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverypasswordusagedropdown_name_2"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverykeyusagedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverykeyusagedropdown_name_2"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackupdropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackupdropdown_name_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrequireactivedirectorybackup_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrequireactivedirectorybackup_name_0"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_oshiderecoverypage_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_oshiderecoverypage_name_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackup_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackup_name_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 9: Fixed drives encryption type
-                        @{
-                            id = "8"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype_fdvencryptiontypedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype_fdvencryptiontypedropdown_name_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 10: Fixed drives recovery options
-                        @{
-                            id = "9"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverykeyusagedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverykeyusagedropdown_name_2"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverypasswordusagedropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverypasswordusagedropdown_name_2"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackupdropdown_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackupdropdown_name_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrequireactivedirectorybackup_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrequireactivedirectorybackup_name_0"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvhiderecoverypage_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvhiderecoverypage_name_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackup_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackup_name_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 11: Removable drives configure BDE
-                        @{
-                            id = "10"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesconfigurebde"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_removabledrivesconfigurebde_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesconfigurebde_rdvallowbde_name"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_removabledrivesconfigurebde_rdvallowbde_name_1"
-                                                children = @(
-                                                    @{
-                                                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                                        settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesencryptiontype"
-                                                        choiceSettingValue = @{
-                                                            value = "device_vendor_msft_bitlocker_removabledrivesencryptiontype_1"
-                                                            children = @(
-                                                                @{
-                                                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                                                    settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesencryptiontype_rdvencryptiontypedropdown_name"
-                                                                    choiceSettingValue = @{
-                                                                        value = "device_vendor_msft_bitlocker_removabledrivesencryptiontype_rdvencryptiontypedropdown_name_1"
-                                                                        children = @()
-                                                                    }
-                                                                }
-                                                            )
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 12: Removable drives require encryption
-                        @{
-                            id = "11"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesrequireencryption"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_removabledrivesrequireencryption_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesrequireencryption_rdvcrossorg"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_bitlocker_removabledrivesrequireencryption_rdvcrossorg_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 13: Configure recovery password rotation
-                        @{
-                            id = "12"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_bitlocker_configurerecoverypasswordrotation"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_bitlocker_configurerecoverypasswordrotation_1"
-                                    children = @()
-                                }
-                            }
-                        }
-                    )
-                }
-                
-                $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
-                Write-LogMessage -Message "Created comprehensive BitLocker policy with ALL 13 settings" -Type Success
-                $policies += $result
-            }
-            catch {
-                Write-LogMessage -Message "Failed to create BitLocker policy - $($_.Exception.Message)" -Type Error
-            }
-        }
-        
-        # ===================================================================
-        # POLICY 3: ONEDRIVE CONFIGURATION - ALL 7 COMPREHENSIVE SETTINGS
-        # ===================================================================
-        Write-LogMessage -Message "Creating comprehensive OneDrive policy with ALL 7 settings..." -Type Info
-        
-        $policyName = "OneDrive Configuration"
-        if (Test-PolicyExists -PolicyName $policyName) {
-            Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
-            $policies += @{ name = $policyName; id = "existing" }
-        }
-        else {
-            try {
-                $body = @{
-                    name = $policyName
-                    description = "OneDrive for Business configuration with Known Folder Move and ALL 7 comprehensive settings"
-                    platforms = "windows10"
-                    technologies = "mdm"
-                    settings = @(
-                        # Setting 1: Disable pause on metered networks
-                        @{
-                            id = "0"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepauseonmeterednetwork"
-                                choiceSettingValue = @{
-                                    value = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepauseonmeterednetwork_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 2: Block opt-out from KFM
-                        @{
-                            id = "1"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_kfmblockoptout"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_kfmblockoptout_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 3: Disable personal sync
-                        @{
-                            id = "2"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepersonalsync"
-                                choiceSettingValue = @{
-                                    value = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepersonalsync_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 4: Force local mass delete detection
-                        @{
-                            id = "3"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_forcedlocalmassdeletedetection"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_forcedlocalmassdeletedetection_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 5: KFM Opt-in with Desktop, Documents, Pictures
-                        @{
-                            id = "4"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_1"
-                                    children = @(
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_desktop_checkbox"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_desktop_checkbox_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_documents_checkbox"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_documents_checkbox_1"
-                                                children = @()
-                                            }
-                                        },
-                                        @{
-                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                            settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_pictures_checkbox"
-                                            choiceSettingValue = @{
-                                                value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_pictures_checkbox_1"
-                                                children = @()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        },
-                        # Setting 6: Silent Account Config
-                        @{
-                            id = "5"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_silentaccountconfig"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_silentaccountconfig_1"
-                                    children = @()
-                                }
-                            }
-                        },
-                        # Setting 7: Files on Demand
-                        @{
-                            id = "6"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_filesondemandenabled"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_filesondemandenabled_1"
-                                    children = @()
-                                }
-                            }
-                        }
-                    )
-                }
-                
-                $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
-                Write-LogMessage -Message "Created comprehensive OneDrive policy with ALL 7 settings" -Type Success
-                $policies += $result
-            }
-            catch {
-                Write-LogMessage -Message "Failed to create OneDrive policy - $($_.Exception.Message)" -Type Error
-            }
-        }
-        
-        # ===================================================================
-        # POLICY 4: LAPS POLICY (Local Admin Password Solution) - COMPREHENSIVE
-        # ===================================================================
-        Write-LogMessage -Message "Creating comprehensive LAPS policy with domain-based admin name..." -Type Info
-        
-        $policyName = "LAPS"
-        if (Test-PolicyExists -PolicyName $policyName) {
-            Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
-            $policies += @{ name = $policyName; id = "existing" }
-        }
-        else {
-            try {
-                # Get domain initials from tenant for admin account name
-                $adminAccountName = "localadmin"
-                if ($script:TenantState -and $script:TenantState.TenantName) {
-                    $tenantName = $script:TenantState.TenantName
-                    # Extract initials from tenant name (e.g., "Penneys" -> "P", "BITS Corp" -> "BC")
-                    $initials = ($tenantName -split '\s+' | ForEach-Object { $_.Substring(0,1).ToUpper() }) -join ''
-                    $adminAccountName = "$($initials)Local"
-                }
-                
-                Write-LogMessage -Message "Setting LAPS admin account name to: $adminAccountName" -Type Info
-                
-                $body = @{
-                    name = $policyName
-                    description = "Local Admin Password Solution with comprehensive password management and security settings"
-                    platforms = "windows10"
-                    technologies = "mdm"
-                    templateReference = @{
-                        templateId = "adc46e5a-f4aa-4ff6-aeff-4f27bc525b90_1"
                     }
-                    settings = @(
-                        @{
-                            id = "0"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_laps_policies_passwordageindays"
-                                settingInstanceTemplateReference = @{
-                                    settingInstanceTemplateId = "ee3d425c-3254-4a92-82e8-7592c714ea33"
-                                }
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 30
-                                    settingValueTemplateReference = @{
-                                        settingValueTemplateId = "a8e6a111-bbfa-4e1a-8754-7f8998185e47"
-                                        useTemplateDefault = $false
+                },
+                # Setting 2: Real-time Protection
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowrealtimemonitoring"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowrealtimemonitoring_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 3: Cloud Extended Timeout  
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_cloudextendedtimeout"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 50
+                        }
+                    }
+                },
+                # Setting 4: Enable Network Protection
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_enablenetworkprotection"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_enablenetworkprotection_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 5: Behavior Monitoring
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowbehaviormonitoring"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowbehaviormonitoring_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 6: Allow Full Scan Removable Drive Scanning
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowfullscanremovabledrivescanning"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowfullscanremovabledrivescanning_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 7: Check for Signatures Before Running Scan
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_checkforsignaturesbeforerunningscan"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_checkforsignaturesbeforerunningscan_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 8: Allow Intrusion Prevention System
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowintrusionpreventionsystem"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowintrusionpreventionsystem_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 9: Allow Script Scanning
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowscriptscanning"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowscriptscanning_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 10: Allow Archive Scanning
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowarchivescanning"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowarchivescanning_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 11: Allow Email Scanning
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowemailscanning"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowemailscanning_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 12: Allow Cloud Protection
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowcloudprotection"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowcloudprotection_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 13: Submit Samples Consent
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_submitsamplesconsent"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_submitsamplesconsent_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 14: Allow On Access Protection
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_allowonaccessprotection"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_allowonaccessprotection_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 15: Real Time Scan Direction
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_realtimescandirection"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_realtimescandirection_0"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 16: Scan Mapped Network Drives During Full Scan
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_scanmappednetworkdrivesduringfullscan"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_scanmappednetworkdrivesduringfullscan_0"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 17: Scan Parameters
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_scanparameter"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_scanparameter_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 18: Schedule Scan Day
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulescanday"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_schedulescanday_0"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 19: Schedule Scan Time
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulescantime"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 120
+                        }
+                    }
+                },
+                # Setting 20: Schedule Quick Scan Time
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulequickscantime"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 120
+                        }
+                    }
+                },
+                # Setting 21: Signature Update Interval
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_signatureupdateinterval"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 4
+                        }
+                    }
+                },
+                # Setting 22: Threat Severity Default Action Critical
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactioncritical"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactioncritical_2"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 23: Threat Severity Default Action High
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionhigh"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionhigh_2"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 24: Threat Severity Default Action Medium
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionmedium"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionmedium_2"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 25: Threat Severity Default Action Low
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionlow"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionlow_2"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 26: Disable Catchup Full Scan
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_defender_disablecatchupfullscan"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_defender_disablecatchupfullscan_1"
+                            children = @()
+                        }
+                    }
+                }
+            )
+        }
+        
+        $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
+        Write-LogMessage -Message "Created comprehensive Windows Defender policy with 26 settings" -Type Success
+        $policies += $result
+    }
+    catch {
+        Write-LogMessage -Message "Failed to create Windows Defender policy - $($_.Exception.Message)" -Type Error
+    }
+}
+
+# ===================================================================
+# POLICY 2: BITLOCKER POLICY - ALL 13 SETTINGS (COMPLETE & FIXED)
+# ===================================================================
+Write-LogMessage -Message "Creating comprehensive BitLocker policy with ALL 13 settings..." -Type Info
+
+$policyName = "Enable Bitlocker"
+if (Test-PolicyExists -PolicyName $policyName) {
+    Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
+    $policies += @{ name = $policyName; id = "existing" }
+}
+else {
+    try {
+        $body = @{
+            name = $policyName
+            description = "Comprehensive BitLocker drive encryption configuration with ALL 13 detailed settings"
+            platforms = "windows10"
+            technologies = "mdm"
+            settings = @(
+                # Setting 1: Require Device Encryption
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_requiredeviceencryption"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_requiredeviceencryption_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 2: Allow warning for other disk encryption
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption_0"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_allowstandarduserencryption"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_allowstandarduserencryption_1"
+                                        children = @()
                                     }
                                 }
-                            }
-                        },
-                        @{
-                            id = "1"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_laps_policies_administratoraccountname"
-                                settingInstanceTemplateReference = @{
-                                    settingInstanceTemplateId = "5c12927e-c178-4c7d-8e0b-85f3c2b59e32"
-                                }
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
-                                    value = $adminAccountName
-                                    settingValueTemplateReference = @{
-                                        settingValueTemplateId = "4e6a4f5b-5cd2-4a0b-8e9f-1a2b3c4d5e6f"
-                                        useTemplateDefault = $false
+                            )
+                        }
+                    }
+                },
+                # Setting 3: Encryption Method By Drive Type
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsosdropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsosdropdown_name_7"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsfdvdropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsfdvdropdown_name_7"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsrdvdropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype_encryptionmethodwithxtsrdvdropdown_name_4"
+                                        children = @()
                                     }
                                 }
-                            }
-                        },
-                        @{
-                            id = "2"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_laps_policies_passwordcomplexity"
-                                settingInstanceTemplateReference = @{
-                                    settingInstanceTemplateId = "be82e4cc-ba74-4d8b-91b3-4f0a0825e82b"
-                                }
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 4
-                                    settingValueTemplateReference = @{
-                                        settingValueTemplateId = "ba72e4cc-ba74-4d8b-91b3-4f0a0825e82c"
-                                        useTemplateDefault = $false
+                            )
+                        }
+                    }
+                },
+                # Setting 4: System drives encryption type
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesencryptiontype"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_systemdrivesencryptiontype_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesencryptiontype_osencryptiontypedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesencryptiontype_osencryptiontypedropdown_name_1"
+                                        children = @()
                                     }
                                 }
-                            }
-                        },
-                        @{
-                            id = "3"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_laps_policies_passwordlength"
-                                settingInstanceTemplateReference = @{
-                                    settingInstanceTemplateId = "78ec6543-ce4b-4d8b-91b3-4f0a0825e93d"
-                                }
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 14
-                                    settingValueTemplateReference = @{
-                                        settingValueTemplateId = "98fc6543-ce4b-4d8b-91b3-4f0a0825e93e"
-                                        useTemplateDefault = $false
+                            )
+                        }
+                    }
+                },
+                # Setting 5: System drives require startup authentication
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_systemdrivesminimumpinlength"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_systemdrivesminimumpinlength_6"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configurepinusagedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configurepinusagedropdown_name_0"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configuretpmusagedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication_configuretpmusagedropdown_name_2"
+                                        children = @()
                                     }
                                 }
-                            }
-                        },
-                        @{
-                            id = "4"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_laps_policies_postauthenticationactions"
-                                settingInstanceTemplateReference = @{
-                                    settingInstanceTemplateId = "d9282eb1-d187-42ae-b366-7081f32dcfff"
-                                }
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_laps_policies_postauthenticationactions_3"
-                                    settingValueTemplateReference = @{
-                                        settingValueTemplateId = "68ff4f78-baa8-4b32-bf3d-5ad5566d8142"
-                                        useTemplateDefault = $false
+                            )
+                        }
+                    }
+                },
+                # Setting 6: System drives minimum PIN length
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesminimumpinlength"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_systemdrivesminimumpinlength_0"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 7: System drives enhanced PIN
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesenhancedpin"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_systemdrivesenhancedpin_0"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 8: System drives recovery options
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osallowdra_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osallowdra_name_1"
+                                        children = @()
                                     }
-                                    children = @()
-                                }
-                            }
-                        },
-                        @{
-                            id = "5"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_laps_policies_postauthenticationresetdelay"
-                                settingInstanceTemplateReference = @{
-                                    settingInstanceTemplateId = "a9e21166-4055-4042-9372-efaf3ef41868"
-                                }
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 1
-                                    settingValueTemplateReference = @{
-                                        settingValueTemplateId = "0deb6aee-8dac-40c4-a9dd-c3718e5c1d52"
-                                        useTemplateDefault = $false
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverypasswordusagedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverypasswordusagedropdown_name_2"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverykeyusagedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrecoverykeyusagedropdown_name_2"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackupdropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackupdropdown_name_1"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrequireactivedirectorybackup_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osrequireactivedirectorybackup_name_0"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_oshiderecoverypage_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_oshiderecoverypage_name_1"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackup_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions_osactivedirectorybackup_name_1"
+                                        children = @()
                                     }
                                 }
+                            )
+                        }
+                    }
+                },
+                # Setting 9: Fixed drives encryption type
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype_fdvencryptiontypedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype_fdvencryptiontypedropdown_name_1"
+                                        children = @()
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                # Setting 10: Fixed drives recovery options
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverykeyusagedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverykeyusagedropdown_name_2"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverypasswordusagedropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrecoverypasswordusagedropdown_name_2"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackupdropdown_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackupdropdown_name_1"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrequireactivedirectorybackup_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvrequireactivedirectorybackup_name_0"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvhiderecoverypage_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvhiderecoverypage_name_1"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackup_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions_fdvactivedirectorybackup_name_1"
+                                        children = @()
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                # Setting 11: Removable drives configure BDE
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesconfigurebde"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_removabledrivesconfigurebde_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesconfigurebde_rdvallowbde_name"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_removabledrivesconfigurebde_rdvallowbde_name_1"
+                                        children = @(
+                                            @{
+                                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                                settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesencryptiontype"
+                                                choiceSettingValue = @{
+                                                    value = "device_vendor_msft_bitlocker_removabledrivesencryptiontype_1"
+                                                    children = @(
+                                                        @{
+                                                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                                            settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesencryptiontype_rdvencryptiontypedropdown_name"
+                                                            choiceSettingValue = @{
+                                                                value = "device_vendor_msft_bitlocker_removabledrivesencryptiontype_rdvencryptiontypedropdown_name_1"
+                                                                children = @()
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                # Setting 12: Removable drives require encryption
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesrequireencryption"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_removabledrivesrequireencryption_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesrequireencryption_rdvcrossorg"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_bitlocker_removabledrivesrequireencryption_rdvcrossorg_1"
+                                        children = @()
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                # Setting 13: Configure recovery password rotation
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_bitlocker_configurerecoverypasswordrotation"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_bitlocker_configurerecoverypasswordrotation_1"
+                            children = @()
+                        }
+                    }
+                }
+            )
+        }
+        
+        $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
+        Write-LogMessage -Message "Created comprehensive BitLocker policy with ALL 13 settings" -Type Success
+        $policies += $result
+    }
+    catch {
+        Write-LogMessage -Message "Failed to create BitLocker policy - $($_.Exception.Message)" -Type Error
+    }
+}
+
+# ===================================================================
+# POLICY 3: ONEDRIVE CONFIGURATION - ALL 7 SETTINGS (COMPLETE & FIXED)
+# ===================================================================
+Write-LogMessage -Message "Creating comprehensive OneDrive policy with ALL 7 settings..." -Type Info
+
+$policyName = "OneDrive Configuration"
+if (Test-PolicyExists -PolicyName $policyName) {
+    Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
+    $policies += @{ name = $policyName; id = "existing" }
+}
+else {
+    try {
+        $body = @{
+            name = $policyName
+            description = "OneDrive for Business configuration with Known Folder Move and ALL 7 comprehensive settings"
+            platforms = "windows10"
+            technologies = "mdm"
+            settings = @(
+                # Setting 1: Disable pause on metered networks
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepauseonmeterednetwork"
+                        choiceSettingValue = @{
+                            value = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepauseonmeterednetwork_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 2: Block opt-out from KFM
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_kfmblockoptout"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_kfmblockoptout_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 3: Disable personal sync
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepersonalsync"
+                        choiceSettingValue = @{
+                            value = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepersonalsync_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 4: Force local mass delete detection
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_forcedlocalmassdeletedetection"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_forcedlocalmassdeletedetection_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 5: KFM Opt-in with Desktop, Documents, Pictures
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_1"
+                            children = @(
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_desktop_checkbox"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_desktop_checkbox_1"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_documents_checkbox"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_documents_checkbox_1"
+                                        children = @()
+                                    }
+                                },
+                                @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                    settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_pictures_checkbox"
+                                    choiceSettingValue = @{
+                                        value = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_pictures_checkbox_1"
+                                        children = @()
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                # Setting 6: Silent Account Config
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_silentaccountconfig"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_silentaccountconfig_1"
+                            children = @()
+                        }
+                    }
+                },
+                # Setting 7: Files on Demand
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_filesondemandenabled"
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_filesondemandenabled_1"
+                            children = @()
+                        }
+                    }
+                }
+            )
+        }
+        
+        $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
+        Write-LogMessage -Message "Created comprehensive OneDrive policy with ALL 7 settings" -Type Success
+        $policies += $result
+    }
+    catch {
+        Write-LogMessage -Message "Failed to create OneDrive policy - $($_.Exception.Message)" -Type Error
+    }
+}
+
+# ===================================================================
+# POLICY 4: LAPS POLICY - COMPREHENSIVE (FIXED)
+# ===================================================================
+Write-LogMessage -Message "Creating comprehensive LAPS policy with domain-based admin name..." -Type Info
+
+$policyName = "LAPS"
+if (Test-PolicyExists -PolicyName $policyName) {
+    Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
+    $policies += @{ name = $policyName; id = "existing" }
+}
+else {
+    try {
+        # Get domain initials from tenant for admin account name
+        $adminAccountName = "localadmin"
+        if ($script:TenantState -and $script:TenantState.TenantName) {
+            $tenantName = $script:TenantState.TenantName
+            # Extract initials from tenant name (e.g., "Penneys" -> "P", "BITS Corp" -> "BC")
+            $initials = ($tenantName -split '\s+' | ForEach-Object { $_.Substring(0,1).ToUpper() }) -join ''
+            $adminAccountName = "$($initials)Local"
+        }
+        
+        Write-LogMessage -Message "Setting LAPS admin account name to: $adminAccountName" -Type Info
+        
+        $body = @{
+            name = $policyName
+            description = "Local Admin Password Solution with comprehensive password management and security settings"
+            platforms = "windows10"
+            technologies = "mdm"
+            templateReference = @{
+                templateId = "adc46e5a-f4aa-4ff6-aeff-4f27bc525b90_1"
+            }
+            settings = @(
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_laps_policies_passwordageindays"
+                        settingInstanceTemplateReference = @{
+                            settingInstanceTemplateId = "ee3d425c-3254-4a92-82e8-7592c714ea33"
+                        }
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 30
+                            settingValueTemplateReference = @{
+                                settingValueTemplateId = "a8e6a111-bbfa-4e1a-8754-7f8998185e47"
+                                useTemplateDefault = $false
                             }
                         }
-                    )
-                }
-                
-                $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
-                Write-LogMessage -Message "Created comprehensive LAPS policy with admin account: $adminAccountName" -Type Success
-                $policies += $result
-            }
-            catch {
-                Write-LogMessage -Message "Failed to create LAPS policy - $($_.Exception.Message)" -Type Error
-            }
-        }
-        
-        # ===================================================================
-        # POLICY 5: POWER OPTIONS CONFIGURATION - ALL 6 SETTINGS
-        # ===================================================================
-        Write-LogMessage -Message "Creating comprehensive Power Options policy with ALL 6 settings..." -Type Info
-        
-        $policyName = "Power Options Configuration"
-        if (Test-PolicyExists -PolicyName $policyName) {
-            Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
-            $policies += @{ name = $policyName; id = "existing" }
-        }
-        else {
-            try {
-                $body = @{
-                    name = $policyName
-                    description = "Comprehensive power management settings for devices with ALL 6 detailed configurations"
-                    platforms = "windows10"
-                    technologies = "mdm"
-                    settings = @(
-                        # Setting 1: Turn off display after (on battery)
-                        @{
-                            id = "0"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_power_displayofftimeoutonbattery"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 900
-                                }
-                            }
-                        },
-                        # Setting 2: Turn off display after (plugged in)
-                        @{
-                            id = "1"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_power_displayofftimeoutpluggedin"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 1800
-                                }
-                            }
-                        },
-                        # Setting 3: Sleep timeout on battery
-                        @{
-                            id = "2"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_power_standbytimeoutonbattery"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 1800
-                                }
-                            }
-                        },
-                        # Setting 4: Sleep timeout plugged in
-                        @{
-                            id = "3"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_power_standbytimeoutpluggedin"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 3600
-                                }
-                            }
-                        },
-                        # Setting 5: Hibernate timeout on battery
-                        @{
-                            id = "4"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_power_hibernatetimeoutonbattery"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 3600
-                                }
-                            }
-                        },
-                        # Setting 6: Hibernate timeout plugged in
-                        @{
-                            id = "5"
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_power_hibernatetimeoutpluggedin"
-                                simpleSettingValue = @{
-                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
-                                    value = 7200
-                                }
+                    }
+                },
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_laps_policies_administratoraccountname"
+                        settingInstanceTemplateReference = @{
+                            settingInstanceTemplateId = "5c12927e-c178-4c7d-8e0b-85f3c2b59e32"
+                        }
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                            value = $adminAccountName
+                            settingValueTemplateReference = @{
+                                settingValueTemplateId = "4e6a4f5b-5cd2-4a0b-8e9f-1a2b3c4d5e6f"
+                                useTemplateDefault = $false
                             }
                         }
-                    )
+                    }
+                },
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_laps_policies_passwordcomplexity"
+                        settingInstanceTemplateReference = @{
+                            settingInstanceTemplateId = "be82e4cc-ba74-4d8b-91b3-4f0a0825e82b"
+                        }
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 4
+                            settingValueTemplateReference = @{
+                                settingValueTemplateId = "ba72e4cc-ba74-4d8b-91b3-4f0a0825e82c"
+                                useTemplateDefault = $false
+                            }
+                        }
+                    }
+                },
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_laps_policies_passwordlength"
+                        settingInstanceTemplateReference = @{
+                            settingInstanceTemplateId = "78ec6543-ce4b-4d8b-91b3-4f0a0825e93d"
+                        }
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 14
+                            settingValueTemplateReference = @{
+                                settingValueTemplateId = "98fc6543-ce4b-4d8b-91b3-4f0a0825e93e"
+                                useTemplateDefault = $false
+                            }
+                        }
+                    }
+                },
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_laps_policies_postauthenticationactions"
+                        settingInstanceTemplateReference = @{
+                            settingInstanceTemplateId = "d9282eb1-d187-42ae-b366-7081f32dcfff"
+                        }
+                        choiceSettingValue = @{
+                            value = "device_vendor_msft_laps_policies_postauthenticationactions_3"
+                            settingValueTemplateReference = @{
+                                settingValueTemplateId = "68ff4f78-baa8-4b32-bf3d-5ad5566d8142"
+                                useTemplateDefault = $false
+                            }
+                            children = @()
+                        }
+                    }
+                },
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_laps_policies_postauthenticationresetdelay"
+                        settingInstanceTemplateReference = @{
+                            settingInstanceTemplateId = "a9e21166-4055-4042-9372-efaf3ef41868"
+                        }
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 1
+                            settingValueTemplateReference = @{
+                                settingValueTemplateId = "0deb6aee-8dac-40c4-a9dd-c3718e5c1d52"
+                                useTemplateDefault = $false
+                            }
+                        }
+                    }
                 }
-                
-                $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
-                Write-LogMessage -Message "Created comprehensive Power Options policy with ALL 6 settings" -Type Success
-                $policies += $result
-            }
-            catch {
-                Write-LogMessage -Message "Failed to create Power Options policy - $($_.Exception.Message)" -Type Error
-            }
+            )
         }
         
+        $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
+        Write-LogMessage -Message "Created comprehensive LAPS policy with admin account: $adminAccountName" -Type Success
+        $policies += $result
+    }
+    catch {
+        Write-LogMessage -Message "Failed to create LAPS policy - $($_.Exception.Message)" -Type Error
+    }
+}
+
+# ===================================================================
+# POLICY 5: POWER OPTIONS CONFIGURATION - ALL 6 SETTINGS (COMPLETE & FIXED)
+# ===================================================================
+Write-LogMessage -Message "Creating comprehensive Power Options policy with ALL 6 settings..." -Type Info
+
+$policyName = "Power Options Configuration"
+if (Test-PolicyExists -PolicyName $policyName) {
+    Write-LogMessage -Message "Policy '$policyName' already exists, skipping creation" -Type Warning
+    $policies += @{ name = $policyName; id = "existing" }
+}
+else {
+    try {
+        $body = @{
+            name = $policyName
+            description = "Comprehensive power management settings for devices with ALL 6 detailed configurations"
+            platforms = "windows10"
+            technologies = "mdm"
+            settings = @(
+                # Setting 1: Turn off display after (on battery)
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_power_displayofftimeoutonbattery"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 900
+                        }
+                    }
+                },
+                # Setting 2: Turn off display after (plugged in)
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_power_displayofftimeoutpluggedin"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 1800
+                        }
+                    }
+                },
+                # Setting 3: Sleep timeout on battery
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_power_standbytimeoutonbattery"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 1800
+                        }
+                    }
+                },
+                # Setting 4: Sleep timeout plugged in
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_power_standbytimeoutpluggedin"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 3600
+                        }
+                    }
+                },
+                # Setting 5: Hibernate timeout on battery
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_power_hibernatetimeoutonbattery"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 3600
+                        }
+                    }
+                },
+                # Setting 6: Hibernate timeout plugged in
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "device_vendor_msft_policy_config_power_hibernatetimeoutpluggedin"
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                            value = 7200
+                        }
+                    }
+                }
+            )
+        }
+        
+        $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
+        Write-LogMessage -Message "Created comprehensive Power Options policy with ALL 6 settings" -Type Success
+        $policies += $result
+    }
+    catch {
+        Write-LogMessage -Message "Failed to create Power Options policy - $($_.Exception.Message)" -Type Error
+    }
+}
         # ===================================================================
         # 4. CREATE COMPREHENSIVE COMPLIANCE POLICIES
         # ===================================================================
