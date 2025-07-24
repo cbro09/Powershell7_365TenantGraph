@@ -282,20 +282,19 @@ function New-TenantIntune {
         else {
             try {
                 $body = @{
-                    name = $policyName
-                    description = "Comprehensive Windows Defender Antivirus configuration with 26+ complete security settings"
-                    platforms = "windows10"
-                    technologies = "mdm"
-                    settings = @(
-                        # Setting 1: PUA Protection
-                        @{
-                            id = "0"
-                            settingInstance = @{
-                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                settingDefinitionId = "device_vendor_msft_policy_config_defender_puaprotection"
-                                choiceSettingValue = @{
-                                    value = "device_vendor_msft_policy_config_defender_puaprotection_1"
-                                    children = @()
+    name = $policyName
+    description = "Comprehensive Windows Defender policy"
+    platforms = "windows10"
+    technologies = "mdm"
+    settings = @(
+        @{
+            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+            settingInstance = @{
+                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                settingDefinitionId = "device_vendor_msft_policy_config_defender_puaprotection"
+                choiceSettingValue = @{
+                    value = "device_vendor_msft_policy_config_defender_puaprotection_1"
+                    children = @()
                                 }
                             }
                         },
