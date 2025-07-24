@@ -280,7 +280,7 @@ function Get-ModuleFromGitHub {
 function Invoke-ModuleFunction {
     <#
     .SYNOPSIS
-        Downloads, executes, and manages module operations
+        Downloads, executes, and manages module operations with enhanced error handling
     #>
     param(
         [Parameter(Mandatory = $true)]
@@ -322,6 +322,32 @@ function Invoke-ModuleFunction {
     }
     catch {
         Write-LogMessage -Message "Module execution failed: $($_.Exception.Message)" -Type Error
+        
+        # Enhanced Graph API error logging
+        if ($_.Exception) {
+            # Check for Graph API response errors
+            if ($_.Exception.Response) {
+                try {
+                    $errorDetails = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                    Write-LogMessage -Message "=== GRAPH API ERROR DETAILS ===" -Type Error
+                    Write-LogMessage -Message "Status Code: $($_.Exception.Response.StatusCode)" -Type Error
+                    Write-LogMessage -Message "Response Body: $errorDetails" -Type Error
+                    Write-LogMessage -Message "================================" -Type Error
+                }
+                catch {
+                    Write-LogMessage -Message "Could not read Graph API error response details" -Type Warning
+                }
+            }
+            
+            # Check for PowerShell-specific errors
+            if ($_.Exception.InnerException) {
+                Write-LogMessage -Message "Inner Exception: $($_.Exception.InnerException.Message)" -Type Error
+            }
+            
+            # Log the full error record for debugging
+            Write-LogMessage -Message "Full Error Details: $($_ | Out-String)" -Type Error -LogOnly
+        }
+        
         return $false
     }
 }
