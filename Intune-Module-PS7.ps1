@@ -1429,7 +1429,6 @@ function New-TenantIntune {
                     defenderVersion = ""
                     signatureOutOfDate = $false
                     rtpEnabled = $true
-                    antivirusRequired = $true
                     antiSpywareRequired = $true
                     deviceCompliancePolicyScript = ""
                     validOperatingSystemBuildRanges = @()
