@@ -1489,7 +1489,4 @@ function New-TenantIntune {
     }
 }
 
-# Export the function for module usage
-Export-ModuleMember -Function New-TenantIntune
-
 # ▼ CB & Claude | BITS 365 Automation | v1.0 | "Smarter not Harder"
