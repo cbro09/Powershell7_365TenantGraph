@@ -297,10 +297,335 @@ function New-TenantIntune {
                     children = @()
                                 }
                             }
+                        },
+                        # Setting 2: Real-time Protection
+                        @{
+                            id = "1"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowrealtimemonitoring"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowrealtimemonitoring_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 3: Cloud Extended Timeout  
+                        @{
+                            id = "2"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_cloudextendedtimeout"
+                                simpleSettingValue = @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                                    value = 50
+                                }
+                            }
+                        },
+                        # Setting 4: Enable Network Protection
+                        @{
+                            id = "3"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_enablenetworkprotection"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_enablenetworkprotection_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 5: Behavior Monitoring
+                        @{
+                            id = "4"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowbehaviormonitoring"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowbehaviormonitoring_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 6: Allow Full Scan Removable Drive Scanning
+                        @{
+                            id = "5"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowfullscanremovabledrivescanning"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowfullscanremovabledrivescanning_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 7: Check for Signatures Before Running Scan
+                        @{
+                            id = "6"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_checkforsignaturesbeforerunningscan"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_checkforsignaturesbeforerunningscan_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 8: Allow Intrusion Prevention System
+                        @{
+                            id = "7"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowintrusionpreventionsystem"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowintrusionpreventionsystem_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 9: Allow Script Scanning
+                        @{
+                            id = "8"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowscriptscanning"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowscriptscanning_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 10: Allow Archive Scanning
+                        @{
+                            id = "9"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowarchivescanning"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowarchivescanning_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 11: Allow Email Scanning
+                        @{
+                            id = "10"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowemailscanning"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowemailscanning_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 12: Allow Cloud Protection
+                        @{
+                            id = "11"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowcloudprotection"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowcloudprotection_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 13: Submit Samples Consent
+                        @{
+                            id = "12"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_submitsamplesconsent"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_submitsamplesconsent_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 14: Allow On Access Protection
+                        @{
+                            id = "13"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_allowonaccessprotection"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_allowonaccessprotection_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 15: Real Time Scan Direction
+                        @{
+                            id = "14"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_realtimescandirection"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_realtimescandirection_0"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 16: Scan Mapped Network Drives During Full Scan
+                        @{
+                            id = "15"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_scanmappednetworkdrivesduringfullscan"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_scanmappednetworkdrivesduringfullscan_0"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 17: Scan Parameters
+                        @{
+                            id = "16"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_scanparameter"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_scanparameter_1"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 18: Schedule Scan Day
+                        @{
+                            id = "17"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulescanday"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_schedulescanday_0"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 19: Schedule Scan Time
+                        @{
+                            id = "18"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulescantime"
+                                simpleSettingValue = @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                                    value = 120
+                                }
+                            }
+                        },
+                        # Setting 20: Schedule Quick Scan Time
+                        @{
+                            id = "19"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_schedulequickscantime"
+                                simpleSettingValue = @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                                    value = 120
+                                }
+                            }
+                        },
+                        # Setting 21: Signature Update Interval
+                        @{
+                            id = "20"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_signatureupdateinterval"
+                                simpleSettingValue = @{
+                                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                                    value = 4
+                                }
+                            }
+                        },
+                        # Setting 22: Threat Severity Default Action Critical
+                        @{
+                            id = "21"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactioncritical"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactioncritical_2"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 23: Threat Severity Default Action High
+                        @{
+                            id = "22"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionhigh"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionhigh_2"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 24: Threat Severity Default Action Medium
+                        @{
+                            id = "23"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionmedium"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionmedium_2"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 25: Threat Severity Default Action Low
+                        @{
+                            id = "24"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionlow"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_threatseveritydefaultactionlow_2"
+                                    children = @()
+                                }
+                            }
+                        },
+                        # Setting 26: Disable Catchup Full Scan
+                        @{
+                            id = "25"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                            settingInstance = @{
+                                "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
+                                settingDefinitionId = "device_vendor_msft_policy_config_defender_disablecatchupfullscan"
+                                choiceSettingValue = @{
+                                    value = "device_vendor_msft_policy_config_defender_disablecatchupfullscan_1"
+                                    children = @()
+                                }
+                            }
                         }
-    ) 
+                    )
                 }
-
+                
                 $result = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies" -Body $body
                 Write-LogMessage -Message "Created comprehensive Windows Defender policy with 26 settings" -Type Success
                 $policies += $result
@@ -331,6 +656,7 @@ function New-TenantIntune {
                         # Setting 1: Require Device Encryption
                         @{
                             id = "0"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_requiredeviceencryption"
@@ -343,6 +669,7 @@ function New-TenantIntune {
                         # Setting 2: Allow warning for other disk encryption
                         @{
                             id = "1"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption"
@@ -364,6 +691,7 @@ function New-TenantIntune {
                         # Setting 3: Encryption Method By Drive Type
                         @{
                             id = "2"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_encryptionmethodbydrivetype"
@@ -401,6 +729,7 @@ function New-TenantIntune {
                         # Setting 4: System drives encryption type
                         @{
                             id = "3"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesencryptiontype"
@@ -422,6 +751,7 @@ function New-TenantIntune {
                         # Setting 5: System drives require startup authentication
                         @{
                             id = "4"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrequirestartupauthentication"
@@ -459,6 +789,7 @@ function New-TenantIntune {
                         # Setting 6: System drives minimum PIN length
                         @{
                             id = "5" 
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesminimumpinlength"
@@ -471,6 +802,7 @@ function New-TenantIntune {
                         # Setting 7: System drives enhanced PIN
                         @{
                             id = "6"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesenhancedpin"
@@ -483,6 +815,7 @@ function New-TenantIntune {
                         # Setting 8: System drives recovery options
                         @{
                             id = "7"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_systemdrivesrecoveryoptions"
@@ -552,6 +885,7 @@ function New-TenantIntune {
                         # Setting 9: Fixed drives encryption type
                         @{
                             id = "8"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesencryptiontype"
@@ -573,6 +907,7 @@ function New-TenantIntune {
                         # Setting 10: Fixed drives recovery options
                         @{
                             id = "9"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_fixeddrivesrecoveryoptions"
@@ -634,6 +969,7 @@ function New-TenantIntune {
                         # Setting 11: Removable drives configure BDE
                         @{
                             id = "10"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesconfigurebde"
@@ -673,6 +1009,7 @@ function New-TenantIntune {
                         # Setting 12: Removable drives require encryption
                         @{
                             id = "11"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_removabledrivesrequireencryption"
@@ -694,6 +1031,7 @@ function New-TenantIntune {
                         # Setting 13: Configure recovery password rotation
                         @{
                             id = "12"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_bitlocker_configurerecoverypasswordrotation"
@@ -736,6 +1074,7 @@ function New-TenantIntune {
                         # Setting 1: Disable pause on metered networks
                         @{
                             id = "0"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepauseonmeterednetwork"
@@ -748,6 +1087,7 @@ function New-TenantIntune {
                         # Setting 2: Block opt-out from KFM
                         @{
                             id = "1"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_kfmblockoptout"
@@ -760,6 +1100,7 @@ function New-TenantIntune {
                         # Setting 3: Disable personal sync
                         @{
                             id = "2"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "user_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_disablepersonalsync"
@@ -772,6 +1113,7 @@ function New-TenantIntune {
                         # Setting 4: Force local mass delete detection
                         @{
                             id = "3"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_forcedlocalmassdeletedetection"
@@ -784,6 +1126,7 @@ function New-TenantIntune {
                         # Setting 5: KFM Opt-in with Desktop, Documents, Pictures
                         @{
                             id = "4"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard"
@@ -821,6 +1164,7 @@ function New-TenantIntune {
                         # Setting 6: Silent Account Config
                         @{
                             id = "5"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_silentaccountconfig"
@@ -833,6 +1177,7 @@ function New-TenantIntune {
                         # Setting 7: Files on Demand
                         @{
                             id = "6"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_onedrivengscv2~policy~onedrivengsc_filesondemandenabled"
@@ -888,6 +1233,7 @@ function New-TenantIntune {
                     settings = @(
                         @{
                             id = "0"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_laps_policies_passwordageindays"
@@ -906,6 +1252,7 @@ function New-TenantIntune {
                         },
                         @{
                             id = "1"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_laps_policies_administratoraccountname"
@@ -924,6 +1271,7 @@ function New-TenantIntune {
                         },
                         @{
                             id = "2"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_laps_policies_passwordcomplexity"
@@ -942,6 +1290,7 @@ function New-TenantIntune {
                         },
                         @{
                             id = "3"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_laps_policies_passwordlength"
@@ -960,6 +1309,7 @@ function New-TenantIntune {
                         },
                         @{
                             id = "4"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_laps_policies_postauthenticationactions"
@@ -978,6 +1328,7 @@ function New-TenantIntune {
                         },
                         @{
                             id = "5"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_laps_policies_postauthenticationresetdelay"
@@ -1027,6 +1378,7 @@ function New-TenantIntune {
                         # Setting 1: Turn off display after (on battery)
                         @{
                             id = "0"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_power_displayofftimeoutonbattery"
@@ -1039,6 +1391,7 @@ function New-TenantIntune {
                         # Setting 2: Turn off display after (plugged in)
                         @{
                             id = "1"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_power_displayofftimeoutpluggedin"
@@ -1051,6 +1404,7 @@ function New-TenantIntune {
                         # Setting 3: Sleep timeout on battery
                         @{
                             id = "2"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_power_standbytimeoutonbattery"
@@ -1063,6 +1417,7 @@ function New-TenantIntune {
                         # Setting 4: Sleep timeout plugged in
                         @{
                             id = "3"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_power_standbytimeoutpluggedin"
@@ -1075,6 +1430,7 @@ function New-TenantIntune {
                         # Setting 5: Hibernate timeout on battery
                         @{
                             id = "4"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_power_hibernatetimeoutonbattery"
@@ -1087,6 +1443,7 @@ function New-TenantIntune {
                         # Setting 6: Hibernate timeout plugged in
                         @{
                             id = "5"
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
                             settingInstance = @{
                                 "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
                                 settingDefinitionId = "device_vendor_msft_policy_config_power_hibernatetimeoutpluggedin"
