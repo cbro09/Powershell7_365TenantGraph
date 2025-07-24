@@ -100,18 +100,23 @@ function Write-LogMessage {
         
         [Parameter(Mandatory = $false)]
         [ValidateSet('Info', 'Success', 'Warning', 'Error')]
-        [string]$Type = 'Info'
+        [string]$Type = 'Info',
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$LogOnly
     )
     
     $timestamp = Get-Date -Format 'HH:mm:ss'
     $logEntry = "[$timestamp] $Message"
     
-    # Console output with colors
-    switch ($Type) {
-        'Success' { Write-Host $logEntry -ForegroundColor Green }
-        'Warning' { Write-Host $logEntry -ForegroundColor Yellow }
-        'Error' { Write-Host $logEntry -ForegroundColor Red }
-        default { Write-Host $logEntry -ForegroundColor White }
+    # Console output with colors (unless LogOnly is specified)
+    if (-not $LogOnly) {
+        switch ($Type) {
+            'Success' { Write-Host $logEntry -ForegroundColor Green }
+            'Warning' { Write-Host $logEntry -ForegroundColor Yellow }
+            'Error' { Write-Host $logEntry -ForegroundColor Red }
+            default { Write-Host $logEntry -ForegroundColor White }
+        }
     }
     
     # Log to file if available
