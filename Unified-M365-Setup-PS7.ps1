@@ -3,20 +3,57 @@
 #requires -Version 7.0
 <#
 .SYNOPSIS
-    Microsoft 365 Unified Tenant Setup - Lightweight Orchestrator
+    Microsoft 365 Unified Tenant Setup - Lightweight Orchestrator with Smart Scope Management
 .DESCRIPTION
     Fast, lightweight orchestrator that downloads specialized modules as needed.
     Each module handles its own dependencies - keeping the main script lightning fast.
+    Now with intelligent scope grouping to prevent "too many scopes" errors.
 .NOTES
-    Version: 4.0 - Lightweight Orchestrator Edition  
+    Version: 4.1 - Scope Grouping Edition  
     Requirements: PowerShell 7.0+, Global Administrator role
     Author: CB & Claude Partnership - 365 Engineers
-    Philosophy: "Download what you need, when you need it"
+    Philosophy: "Download what you need, when you need it - with the right permissions"
 #>
 
 # ===================================================================
-# LIGHTWEIGHT CONFIGURATION - MINIMAL DEPENDENCIES
+# SMART SCOPE CONFIGURATION - PREVENTS "TOO MANY SCOPES" ERRORS
 # ===================================================================
+
+$script:ScopeGroups = @{
+    'Core' = @(
+        "User.ReadWrite.All",
+        "Group.ReadWrite.All", 
+        "Directory.ReadWrite.All"
+    )
+    
+    'Policy' = @(
+        "Policy.ReadWrite.ConditionalAccess",
+        "DeviceManagement.ReadWrite.All",
+        "Policy.Read.All"
+    )
+    
+    'Collaboration' = @(
+        "Sites.ReadWrite.All",
+        "Mail.ReadWrite",
+        "Calendars.ReadWrite"
+    )
+    
+    'Security' = @(
+        "SecurityEvents.ReadWrite.All",
+        "ThreatIndicators.ReadWrite.OwnedBy"
+    )
+}
+
+# === Operation to Scope Group Mapping ===
+$script:OperationScopes = @{
+    'Groups' = @('Core')
+    'ConditionalAccess' = @('Core', 'Policy')
+    'Users' = @('Core')
+    'SharePoint' = @('Core', 'Collaboration')
+    'Intune' = @('Core', 'Policy')
+    'Documentation' = @('Core')  # Read-only operations
+    'AdminCreation' = @('Core')
+}
 
 $script:Config = @{
     LogFile = "$env:USERPROFILE\Documents\M365TenantSetup_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
@@ -24,13 +61,6 @@ $script:Config = @{
     # MINIMAL required modules - only for basic orchestration
     RequiredModules = @(
         "Microsoft.Graph.Authentication"  # Only auth module - 30x faster than full Graph
-    )
-    
-    # Basic scopes for tenant verification only
-    BasicScopes = @(
-        "Organization.Read.All",
-        "Directory.Read.All",
-        "Policy.ReadWrite.ConditionalAccess"
     )
 }
 
@@ -70,11 +100,11 @@ function Initialize-Logging {
         
         $logHeader = @"
 =================================================================
-M365 Tenant Setup Orchestrator - Lightweight Edition
+M365 Tenant Setup Orchestrator - Scope Grouping Edition
 PowerShell Version: $($PSVersionTable.PSVersion)
 PowerShell Edition: $($PSVersionTable.PSEdition)
 Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
-Strategy: Download modules as needed for maximum speed
+Strategy: Smart scope management + Download modules as needed
 =================================================================
 
 "@
@@ -133,47 +163,88 @@ function Write-LogMessage {
 }
 
 # ===================================================================
-# MINIMAL MODULE MANAGEMENT - AUTHENTICATION ONLY
+# SMART SCOPE MANAGEMENT FUNCTIONS
 # ===================================================================
 
-function Install-MinimalModules {
+function Get-RequiredScopes {
     <#
     .SYNOPSIS
-        Installs only the absolute minimum for orchestration
+        Returns the required scopes for a specific operation
     #>
-    Write-LogMessage -Message "Installing minimal modules for orchestration..." -Type Info
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Operation
+    )
     
-    foreach ($module in $script:Config.RequiredModules) {
-        try {
-            if (-not (Get-Module -ListAvailable -Name $module)) {
-                Write-LogMessage -Message "Installing: $module" -Type Info
-                Install-Module -Name $module -Repository PSGallery -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
-            }
-            
-            if (-not (Get-Module -Name $module)) {
-                Import-Module -Name $module -Force -ErrorAction Stop
-            }
-            
-            Write-LogMessage -Message "Ready: $module" -Type Success
-        }
-        catch {
-            Write-LogMessage -Message "Failed to install $module - $($_.Exception.Message)" -Type Error
-            return $false
-        }
+    $requiredGroups = $script:OperationScopes[$Operation]
+    if (-not $requiredGroups) {
+        Write-LogMessage -Message "Unknown operation: $Operation. Using Core scopes." -Type Warning
+        $requiredGroups = @('Core')
     }
     
-    Write-LogMessage -Message "Minimal modules ready - startup optimized!" -Type Success
-    return $true
+    $allScopes = @()
+    foreach ($group in $requiredGroups) {
+        $allScopes += $script:ScopeGroups[$group]
+    }
+    
+    return ($allScopes | Select-Object -Unique)
 }
 
-# ===================================================================
-# BASIC AUTHENTICATION - TENANT VERIFICATION ONLY
-# ===================================================================
+function Connect-ToGraphWithScopes {
+    <#
+    .SYNOPSIS
+        Connects to Microsoft Graph with operation-specific scopes
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Operation
+    )
+    
+    try {
+        # Get required scopes for this operation
+        $requiredScopes = Get-RequiredScopes -Operation $Operation
+        
+        # Check if already connected with correct scopes
+        $currentContext = Get-MgContext -ErrorAction SilentlyContinue
+        if ($currentContext) {
+            $currentScopes = $currentContext.Scopes
+            $missingScopes = $requiredScopes | Where-Object { $_ -notin $currentScopes }
+            
+            if ($missingScopes.Count -eq 0) {
+                Write-LogMessage -Message "Already connected with required scopes for $Operation" -Type Success
+                return $true
+            }
+            else {
+                Write-LogMessage -Message "Current connection missing scopes: $($missingScopes -join ', ')" -Type Warning
+                Write-LogMessage -Message "Reconnecting with required scopes..." -Type Info
+                Disconnect-MgGraph | Out-Null
+            }
+        }
+        
+        # Connect with required scopes
+        Write-LogMessage -Message "Connecting to Microsoft Graph for $Operation operations..." -Type Info
+        Write-LogMessage -Message "Required scopes: $($requiredScopes -join ', ')" -Type Info
+        
+        Connect-MgGraph -Scopes $requiredScopes -ForceAuthentication -NoWelcome -ErrorAction Stop | Out-Null
+        
+        $context = Get-MgContext
+        Write-LogMessage -Message "Connected to Microsoft Graph as $($context.Account)" -Type Success
+        Write-LogMessage -Message "Active scopes: $($context.Scopes -join ', ')" -Type Info -LogOnly
+        
+        return $true
+    }
+    catch {
+        Write-LogMessage -Message "Failed to connect to Microsoft Graph: $($_.Exception.Message)" -Type Error
+        return $false
+    }
+}
 
 function Connect-ForVerification {
     <#
     .SYNOPSIS
-        Lightweight connection for tenant verification only
+        Initial connection for tenant verification with core scopes
     #>
     try {
         Write-LogMessage -Message "Connecting for tenant verification..." -Type Info
@@ -186,8 +257,9 @@ function Connect-ForVerification {
             # Ignore disconnect errors
         }
         
-        # Basic connection with minimal scopes
-        Connect-MgGraph -Scopes $script:Config.BasicScopes -NoWelcome -ErrorAction Stop | Out-Null
+        # Connect with core scopes for verification
+        $coreScopes = $script:ScopeGroups['Core'] + @("Organization.Read.All")
+        Connect-MgGraph -Scopes $coreScopes -NoWelcome -ErrorAction Stop | Out-Null
         
         # Quick tenant verification
         $org = Get-MgOrganization -ErrorAction Stop | Select-Object -First 1
@@ -224,6 +296,40 @@ function Connect-ForVerification {
         Write-LogMessage -Message "Verification failed: $($_.Exception.Message)" -Type Error
         return $false
     }
+}
+
+# ===================================================================
+# MINIMAL MODULE MANAGEMENT - AUTHENTICATION ONLY
+# ===================================================================
+
+function Install-MinimalModules {
+    <#
+    .SYNOPSIS
+        Installs only the absolute minimum for orchestration
+    #>
+    Write-LogMessage -Message "Installing minimal modules for orchestration..." -Type Info
+    
+    foreach ($module in $script:Config.RequiredModules) {
+        try {
+            if (-not (Get-Module -ListAvailable -Name $module)) {
+                Write-LogMessage -Message "Installing: $module" -Type Info
+                Install-Module -Name $module -Repository PSGallery -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
+            }
+            
+            if (-not (Get-Module -Name $module)) {
+                Import-Module -Name $module -Force -ErrorAction Stop
+            }
+            
+            Write-LogMessage -Message "Ready: $module" -Type Success
+        }
+        catch {
+            Write-LogMessage -Message "Failed to install $module - $($_.Exception.Message)" -Type Error
+            return $false
+        }
+    }
+    
+    Write-LogMessage -Message "Minimal modules ready - startup optimized!" -Type Success
+    return $true
 }
 
 # ===================================================================
@@ -278,10 +384,10 @@ function Get-ModuleFromGitHub {
     }
 }
 
-function Invoke-ModuleFunction {
+function Invoke-ModuleOperationWithAuth {
     <#
     .SYNOPSIS
-        Downloads, executes, and manages module operations with enhanced error handling
+        Downloads, executes, and manages module operations with smart scope management
     #>
     param(
         [Parameter(Mandatory = $true)]
@@ -292,6 +398,15 @@ function Invoke-ModuleFunction {
     )
     
     try {
+        Write-LogMessage -Message "Starting $ModuleName operation..." -Type Info
+        
+        # Connect with operation-specific scopes
+        $connected = Connect-ToGraphWithScopes -Operation $ModuleName
+        if (-not $connected) {
+            Write-LogMessage -Message "Failed to establish Graph connection for $ModuleName" -Type Error
+            return $false
+        }
+        
         # Ensure cache exists
         if (-not (Initialize-ModuleCache)) {
             return $false
@@ -318,11 +433,16 @@ function Invoke-ModuleFunction {
             $result = & $FunctionName
         }
         
-        Write-LogMessage -Message "Module execution completed" -Type Success
-        return $result
+        if ($result) {
+            Write-LogMessage -Message "$ModuleName operation completed successfully" -Type Success
+            return $true
+        } else {
+            Write-LogMessage -Message "$ModuleName operation failed" -Type Error
+            return $false
+        }
     }
     catch {
-        Write-LogMessage -Message "Module execution failed: $($_.Exception.Message)" -Type Error
+        Write-LogMessage -Message "Error in $ModuleName operation: $($_.Exception.Message)" -Type Error
         
         # Enhanced Graph API error logging
         if ($_.Exception) {
@@ -360,13 +480,13 @@ function Invoke-ModuleFunction {
 function Show-Banner {
     Write-Host ""
     Write-Host "+-----------------------------------------------------+" -ForegroundColor Blue
-    Write-Host "|    M365 Tenant Setup - Lightning Fast Orchestrator |" -ForegroundColor Magenta
-    Write-Host "|    Modules downloaded as needed from GitHub         |" -ForegroundColor Magenta  
+    Write-Host "|  M365 Tenant Setup - Smart Scope Management        |" -ForegroundColor Magenta
+    Write-Host "|  Modules downloaded as needed from GitHub           |" -ForegroundColor Magenta  
     Write-Host "+-----------------------------------------------------+" -ForegroundColor Blue
     Write-Host ""
     Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
     Write-Host "PowerShell Edition: $($PSVersionTable.PSEdition)" -ForegroundColor Cyan
-    Write-Host "Strategy: Download what you need, when you need it" -ForegroundColor Gray
+    Write-Host "Strategy: Right scopes + Download what you need" -ForegroundColor Gray
     Write-Host ""
 }
 
@@ -409,12 +529,12 @@ function Show-Menu {
 function Start-TenantSetup {
     # ▼ CB & Claude | BITS 365 Automation | v1.0 | "Smarter not Harder"
     
-    Write-Host "Microsoft 365 Tenant Setup - Lightning Fast Orchestrator" -ForegroundColor Cyan
+    Write-Host "Microsoft 365 Tenant Setup - Smart Scope Management Orchestrator" -ForegroundColor Cyan
     Write-Host "Initializing minimal environment..." -ForegroundColor Gray
     
     # Quick initialization
     Initialize-Logging | Out-Null
-    Write-LogMessage -Message "M365 Tenant Setup Orchestrator started" -Type Info
+    Write-LogMessage -Message "M365 Tenant Setup Orchestrator started with smart scope management" -Type Info
     
     # Install only what we need for orchestration
     $modulesReady = Install-MinimalModules
@@ -496,38 +616,38 @@ function Start-TenantSetup {
                     Read-Host "Press Enter to continue"
                 }
                 3 {
-                    Write-LogMessage -Message "Launching: Groups Module" -Type Info
-                    Invoke-ModuleFunction -ModuleName "Groups" -FunctionName "New-TenantGroups" | Out-Null
+                    Write-LogMessage -Message "Launching: Groups Module with Core scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "Groups" -FunctionName "New-TenantGroups" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 4 {
-                    Write-LogMessage -Message "Launching: Conditional Access Module" -Type Info
-                    Invoke-ModuleFunction -ModuleName "ConditionalAccess" -FunctionName "New-TenantCAPolices" | Out-Null
+                    Write-LogMessage -Message "Launching: Conditional Access Module with Core+Policy scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "ConditionalAccess" -FunctionName "New-TenantCAPolices" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 5 {
-                    Write-LogMessage -Message "Launching: SharePoint Module" -Type Info
-                    Invoke-ModuleFunction -ModuleName "SharePoint" -FunctionName "New-TenantSharePoint" | Out-Null
+                    Write-LogMessage -Message "Launching: SharePoint Module with Core+Collaboration scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "SharePoint" -FunctionName "New-TenantSharePoint" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 6 {
-                    Write-LogMessage -Message "Launching: Intune Module (Comprehensive)" -Type Info
-                    Invoke-ModuleFunction -ModuleName "Intune" -FunctionName "New-TenantIntune" | Out-Null
+                    Write-LogMessage -Message "Launching: Intune Module with Core+Policy scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "Intune" -FunctionName "New-TenantIntune" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 7 {
-                    Write-LogMessage -Message "Launching: User Creation Module" -Type Info
-                    Invoke-ModuleFunction -ModuleName "Users" -FunctionName "New-TenantUsers" | Out-Null
+                    Write-LogMessage -Message "Launching: User Creation Module with Core scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "Users" -FunctionName "New-TenantUsers" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 8 {
-                    Write-LogMessage -Message "Launching: Admin Role Creation Module" -Type Info
-                    Invoke-ModuleFunction -ModuleName "AdminCreation" -FunctionName "New-AdminHelpdeskRole" | Out-Null
+                    Write-LogMessage -Message "Launching: Admin Role Creation Module with Core scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "AdminCreation" -FunctionName "New-AdminHelpdeskRole" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 9 {
-                    Write-LogMessage -Message "Launching: Documentation Module" -Type Info
-                    Invoke-ModuleFunction -ModuleName "Documentation" -FunctionName "New-TenantDocumentation" | Out-Null
+                    Write-LogMessage -Message "Launching: Documentation Module with Core scopes" -Type Info
+                    Invoke-ModuleOperationWithAuth -ModuleName "Documentation" -FunctionName "New-TenantDocumentation" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 10 {
@@ -554,7 +674,7 @@ function Start-TenantSetup {
     
     Write-Host ""
     Write-Host "Thank you for using the M365 Tenant Setup Orchestrator!" -ForegroundColor Cyan
-    Write-Host "Lightning Fast • Module-on-Demand • Always Current" -ForegroundColor Gray
+    Write-Host "Smart Scopes • Module-on-Demand • Always Current" -ForegroundColor Gray
     Write-Host "Session log: $($script:Config.LogFile)" -ForegroundColor Gray
     Write-Host ""
     
@@ -577,7 +697,7 @@ if ($currentPolicy -eq 'Restricted') {
     Write-Host "Execution Policy is Restricted. Consider: Set-ExecutionPolicy RemoteSigned -Scope CurrentUser" -ForegroundColor Yellow
 }
 
-# Start the lightning-fast orchestrator
+# Start the smart scope orchestrator
 Start-TenantSetup
 
 # ▼ CB & Claude | BITS 365 Automation | v1.0 | "Smarter not Harder"
