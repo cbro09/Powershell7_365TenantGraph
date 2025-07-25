@@ -62,33 +62,6 @@ function New-TenantCAPolices {
     try {
         Write-LogMessage -Message "Starting Conditional Access policies creation process..." -Type Info
         
-        # ===== CRITICAL FIX: FORCE TOKEN REFRESH =====
-        $requiredScopes = @(
-            "Policy.ReadWrite.ConditionalAccess",
-            "Directory.Read.All",
-            "Group.Read.All"
-        )
-        
-        # Clean up any existing connections
-        try { 
-            Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null 
-            Write-LogMessage -Message "Cleaned up previous Graph connection" -Type Info
-        } catch {}
-        
-        # Reconnect with exact required permissions
-        Write-LogMessage -Message "Connecting with Conditional Access permissions..." -Type Info
-        Connect-MgGraph -Scopes $requiredScopes -NoWelcome -ErrorAction Stop | Out-Null
-        
-        # Verify new connection
-        $context = Get-MgContext
-        if (-not $context) {
-            Write-LogMessage -Message "Failed to establish Graph connection" -Type Error
-            return $false
-        }
-        
-        Write-LogMessage -Message "Successfully connected with scopes: $($context.Scopes)" -Type Success
-        # ===== END CRITICAL FIX SECTION =====
-        
         # Handle TenantState - use provided or gather from Graph
         if ($TenantState) {
             $script:TenantState = $TenantState
