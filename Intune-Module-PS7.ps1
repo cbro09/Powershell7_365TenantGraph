@@ -740,6 +740,27 @@ function New-TenantIntune {
         # =================================================================
         # POLICY ASSIGNMENTS (FIXED GROUP MAPPINGS)
         # =================================================================
+
+# Get real IDs for existing policies before assignment
+foreach ($policy in $policies) {
+    if ($policy.id -eq "existing") {
+        $existingPolicy = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations?`$filter=displayName eq '$($policy.displayName)'"
+        if ($existingPolicy.value.Count -gt 0) {
+            $policy.id = $existingPolicy.value[0].id
+        }
+    }
+}
+
+# Get real IDs for existing compliance policies  
+foreach ($policy in $compliancePolicies) {
+    if ($policy.id -eq "existing") {
+        $existingPolicy = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies?`$filter=displayName eq '$($policy.displayName)'"
+        if ($existingPolicy.value.Count -gt 0) {
+            $policy.id = $existingPolicy.value[0].id
+        }
+    }
+}
+
         Write-LogMessage -Message "Assigning policies to device groups..." -Type Info
         
         $policyAssignments = @{
