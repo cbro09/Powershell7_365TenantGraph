@@ -740,30 +740,9 @@ function New-TenantIntune {
 # POLICY ASSIGNMENTS 
 # =================================================================
 
-# Get real policy IDs for existing policies
-$allConfigPolicies = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations"
-$allCompliancePolicies = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies"
-
-# Update policy objects with real IDs
-foreach ($policy in $policies) {
-    if ($policy.id -eq "existing") {
-        $matchingPolicy = $allConfigPolicies.value | Where-Object { $_.displayName -eq $policy.displayName }
-        if ($matchingPolicy) {
-            $policy.id = $matchingPolicy.id
-            Write-LogMessage -Message "Found existing config policy ID: $($policy.id)" -Type Info
-        }
-    }
-}
-
-foreach ($policy in $compliancePolicies) {
-    if ($policy.id -eq "existing") {
-        $matchingPolicy = $allCompliancePolicies.value | Where-Object { $_.displayName -eq $policy.displayName }
-        if ($matchingPolicy) {
-            $policy.id = $matchingPolicy.id
-            Write-LogMessage -Message "Found existing compliance policy ID: $($policy.id)" -Type Info
-        }
-    }
-}
+# =================================================================
+# POLICY ASSIGNMENTS (CORRECTED - INDIVIDUAL ASSIGNMENTS)
+# =================================================================
 
 Write-LogMessage -Message "Assigning policies to device groups..." -Type Info
 
@@ -779,32 +758,43 @@ $policyAssignments = @{
     "macOS Basic Compliance" = "MacOS Devices"
 }
 
-# Assign configuration policies - FIXED STRUCTURE
+# Function to create individual assignment
+function New-PolicyAssignment {
+    param($PolicyId, $GroupId, $PolicyType)
+    
+    $endpoint = if ($PolicyType -eq "Config") { "deviceConfigurations" } else { "deviceCompliancePolicies" }
+    
+    $assignmentBody = @{
+        "@odata.type" = "#microsoft.graph.deviceConfigurationAssignment"
+        target = @{
+            "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
+            groupId = $GroupId
+        }
+    }
+    
+    # CORRECT: Individual assignment to /assignments endpoint
+    $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/$endpoint/$PolicyId/assignments"
+    
+    try {
+        Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
+        return $true
+    }
+    catch {
+        Write-LogMessage -Message "Assignment failed: $($_.Exception.Message)" -Type Error
+        return $false
+    }
+}
+
+# Assign configuration policies
 foreach ($policy in $policies) {
     if ($policyAssignments.ContainsKey($policy.displayName) -and $policy.id -ne "existing") {
         $targetGroupName = $policyAssignments[$policy.displayName]
         $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
         
         if ($targetGroupId) {
-            try {
-                # CORRECT JSON STRUCTURE
-                $assignmentBody = @{
-                    assignments = @(
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                groupId = $targetGroupId
-                            }
-                        }
-                    )
-                }
-                
-                $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations/$($policy.id)/assign"
-                Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
+            $success = New-PolicyAssignment -PolicyId $policy.id -GroupId $targetGroupId -PolicyType "Config"
+            if ($success) {
                 Write-LogMessage -Message "✅ Assigned config policy '$($policy.displayName)' to '$targetGroupName'" -Type Success
-            }
-            catch {
-                Write-LogMessage -Message "❌ Config policy assignment failed: $($_.Exception.Message)" -Type Error
             }
         }
         else {
@@ -813,32 +803,16 @@ foreach ($policy in $policies) {
     }
 }
 
-# Assign compliance policies - FIXED STRUCTURE  
+# Assign compliance policies  
 foreach ($policy in $compliancePolicies) {
     if ($policyAssignments.ContainsKey($policy.displayName) -and $policy.id -ne "existing") {
         $targetGroupName = $policyAssignments[$policy.displayName]
         $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
         
         if ($targetGroupId) {
-            try {
-                # CORRECT JSON STRUCTURE
-                $assignmentBody = @{
-                    assignments = @(
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                groupId = $targetGroupId
-                            }
-                        }
-                    )
-                }
-                
-                $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies/$($policy.id)/assign"
-                Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
+            $success = New-PolicyAssignment -PolicyId $policy.id -GroupId $targetGroupId -PolicyType "Compliance"
+            if ($success) {
                 Write-LogMessage -Message "✅ Assigned compliance policy '$($policy.displayName)' to '$targetGroupName'" -Type Success
-            }
-            catch {
-                Write-LogMessage -Message "❌ Compliance policy assignment failed: $($_.Exception.Message)" -Type Error
             }
         }
         else {
