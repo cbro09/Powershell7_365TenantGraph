@@ -796,7 +796,7 @@ foreach ($policy in $compliancePolicies) {
                             )
                         }
                         
-                        $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations/$($policy.id)/assign"
+                        $assignUri = "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations/$($policy.id)/assign"
                         Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
                         Write-LogMessage -Message "Assigned policy '$($policy.displayName)' to group '$targetGroupName'" -Type Success
                     }
