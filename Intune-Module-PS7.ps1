@@ -142,27 +142,33 @@ function New-TenantIntune {
         }
 
         foreach ($groupName in $requiredGroups.Keys) {
-            if (-not $script:TenantState.CreatedGroups.ContainsKey($groupName)) {
-                try {
-                    $mailNickName = ($groupName -replace "[^a-zA-Z0-9]", "")
-                    
-                    $group = New-MgGroup -DisplayName $groupName `
-                        -Description "Dynamic group for $groupName" `
-                        -GroupTypes @("DynamicMembership") `
-                        -MembershipRule $requiredGroups[$groupName] `
-                        -MembershipRuleProcessingState "On" `
-                        -MailEnabled:$false `
-                        -SecurityEnabled:$true `
-                        -MailNickName $mailNickName
-                    
-                    $script:TenantState.CreatedGroups[$groupName] = $group.id
-                    Write-LogMessage -Message "Created group '$groupName'" -Type Success
-                }
-                catch {
-                    Write-LogMessage -Message "Failed to create group '$groupName' - $($_.Exception.Message)" -Type Error
-                }
-            }
+    # Check if group exists in Azure AD (not just local state)
+    $existingGroup = Get-MgGroup -Filter "displayName eq '$groupName'" -ErrorAction SilentlyContinue
+    
+    if ($existingGroup) {
+        Write-LogMessage -Message "Group '$groupName' already exists, skipping creation" -Type Warning
+        $script:TenantState.CreatedGroups[$groupName] = $existingGroup.Id
+    } else {
+        try {
+            $mailNickName = ($groupName -replace "[^a-zA-Z0-9]", "")
+            
+            $group = New-MgGroup -DisplayName $groupName `
+                -Description "Dynamic group for $groupName" `
+                -GroupTypes @("DynamicMembership") `
+                -MembershipRule $requiredGroups[$groupName] `
+                -MembershipRuleProcessingState "On" `
+                -MailEnabled:$false `
+                -SecurityEnabled:$true `
+                -MailNickName $mailNickName
+            
+            $script:TenantState.CreatedGroups[$groupName] = $group.id
+            Write-LogMessage -Message "Created group '$groupName'" -Type Success
         }
+        catch {
+            Write-LogMessage -Message "Failed to create group '$groupName' - $($_.Exception.Message)" -Type Error
+        }
+    }
+}
         
         # Check LAPS Prerequisite
         Write-LogMessage -Message "Checking Windows LAPS prerequisite..." -Type Info
