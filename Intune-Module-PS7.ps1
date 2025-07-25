@@ -135,10 +135,10 @@ function New-TenantIntune {
         Write-LogMessage -Message "Creating required device groups..." -Type Info
         
         $requiredGroups = @{
-            'Windows AutoPilot Devices' = '(device.devicePhysicalIDs -any (_ -contains "[ZTDId]"))'
-            'Android Devices' = '(device.deviceOSType -eq "Android")'
-            'iOS Devices' = '(device.deviceOSType -eq "iPhone") or (device.deviceOSType -eq "iPad")'
             'Windows Devices' = '(device.deviceOSType -eq "Windows")'
+            'Android Devices' = '(device.deviceOSType -eq "Android")'
+            'iOS Devices' = '(device.deviceOSType -eq "iPad") or (device.deviceOSType -eq "iPhone")'
+            'Windows AutoPilot Devices' = '(device.devicePhysicalIDs -any (_ -contains "[ZTDId]"))'
         }
 
         foreach ($groupName in $requiredGroups.Keys) {
