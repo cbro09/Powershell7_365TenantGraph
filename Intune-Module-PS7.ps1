@@ -793,7 +793,7 @@ foreach ($policy in $compliancePolicies) {
     )
 }
 
-$assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations/$($policy.id)/assignments"
+$assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations/$($policy.id)/assign"
                         Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
                         Write-LogMessage -Message "Assigned policy '$($policy.displayName)' to group '$targetGroupName'" -Type Success
                     }
@@ -820,7 +820,7 @@ $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurat
     )
 }
 
-$assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies/$($policy.id)/assignments"
+$assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies/$($policy.id)/assign"
                         Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
                         Write-LogMessage -Message "Assigned compliance policy '$($policy.displayName)' to group '$targetGroupName'" -Type Success
                     }
