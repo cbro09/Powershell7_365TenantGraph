@@ -27,9 +27,7 @@ $script:ScopeGroups = @{
     )
     
     'Policy' = @(
-        "Policy.ReadWrite.ConditionalAccess",
-        "DeviceManagement.ReadWrite.All",
-        "Policy.Read.All"
+        "Policy.ReadWrite.ConditionalAccess"
     )
     
     'Collaboration' = @(
@@ -227,7 +225,7 @@ function Connect-ToGraphWithScopes {
         Write-LogMessage -Message "Connecting to Microsoft Graph for $Operation operations..." -Type Info
         Write-LogMessage -Message "Required scopes: $($requiredScopes -join ', ')" -Type Info
         
-        Connect-MgGraph -Scopes $requiredScopes -ForceAuthentication -NoWelcome -ErrorAction Stop | Out-Null
+        Connect-MgGraph -Scopes $requiredScopes -NoWelcome -ErrorAction Stop | Out-Null
         
         $context = Get-MgContext
         Write-LogMessage -Message "Connected to Microsoft Graph as $($context.Account)" -Type Success
