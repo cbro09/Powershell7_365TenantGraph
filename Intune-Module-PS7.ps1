@@ -135,7 +135,7 @@ function New-TenantIntune {
         Write-LogMessage -Message "Creating required device groups..." -Type Info
         
         $requiredGroups = @{
-            'Windows Devices' = '(device.deviceOSType -eq "Windows")'
+            'MacOS Devices' = '(device.deviceOSType -eq "MacMDM")'
             'Android Devices' = '(device.deviceOSType -eq "Android")'
             'iOS Devices' = '(device.deviceOSType -eq "iPad") or (device.deviceOSType -eq "iPhone")'
             'Windows AutoPilot Devices' = '(device.devicePhysicalIDs -any (_ -contains "[ZTDId]"))'
@@ -495,7 +495,7 @@ function New-TenantIntune {
         }
         else {
             try {
-                $windowsComplianceBody = @{
+                $windowsComplianceParams = @{
                     "@odata.type" = "#microsoft.graph.windows10CompliancePolicy"
                     displayName = $windowsComplianceName
                     description = "Corporate compliance requirements for Windows 10/11 devices"
@@ -514,8 +514,6 @@ function New-TenantIntune {
                     requireHealthyDeviceReport = $true
                     osMinimumVersion = "10.0.18362"
                     osMaximumVersion = $null
-                    mobileOsMinimumVersion = $null
-                    mobileOsMaximumVersion = $null
                     
                     # Security Requirements
                     earlyLaunchAntiMalwareDriverEnabled = $true
@@ -528,23 +526,25 @@ function New-TenantIntune {
                     # Firewall and Antivirus
                     activeFirewallRequired = $true
                     defenderEnabled = $true
-                    defenderVersion = $null
-                    signatureOutOfDate = $false
                     rtpEnabled = $true
                     antivirusRequired = $true
                     antiSpywareRequired = $true
                     
-                    # Threat Protection
-                    deviceThreatProtectionEnabled = $false
-                    deviceThreatProtectionRequiredSecurityLevel = "unavailable"
-                    configurationManagerComplianceRequired = $false
-                    
-                    # Additional Settings
-                    deviceCompliancePolicyScript = $null
-                    validOperatingSystemBuildRanges = @()
+                    # Required: Scheduled Actions
+                    scheduledActionsForRule = @(
+                        @{
+                            ruleName = "PasswordRequired"
+                            scheduledActionConfigurations = @(
+                                @{
+                                    actionType = "block"
+                                    gracePeriodHours = 72
+                                }
+                            )
+                        }
+                    )
                 }
                 
-                $result = Invoke-GraphRequestWithRetry -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies" -Method POST -Body $windowsComplianceBody
+                $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $windowsComplianceParams
                 Write-LogMessage -Message "Created Windows compliance policy" -Type Success
                 $compliancePolicies += $result
             }
@@ -563,7 +563,7 @@ function New-TenantIntune {
         }
         else {
             try {
-                $iosComplianceBody = @{
+                $iosComplianceParams = @{
                     "@odata.type" = "#microsoft.graph.iosCompliancePolicy"
                     displayName = $iosComplianceName
                     description = "Corporate compliance requirements for iOS devices"
@@ -581,19 +581,25 @@ function New-TenantIntune {
                     
                     # Device Security
                     jailbroken = $false
-                    deviceThreatProtectionEnabled = $false
-                    deviceThreatProtectionRequiredSecurityLevel = "unavailable"
-                    
-                    # OS Version
+                    securityBlockJailbrokenDevices = $true
                     osMinimumVersion = "14.0"
                     osMaximumVersion = $null
                     
-                    # Additional Security
-                    securityBlockJailbrokenDevices = $true
-                    managedEMailProfileRequired = $false
+                    # Required: Scheduled Actions
+                    scheduledActionsForRule = @(
+                        @{
+                            ruleName = "PasswordRequired"
+                            scheduledActionConfigurations = @(
+                                @{
+                                    actionType = "block"
+                                    gracePeriodHours = 72
+                                }
+                            )
+                        }
+                    )
                 }
                 
-                $result = Invoke-GraphRequestWithRetry -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies" -Method POST -Body $iosComplianceBody
+                $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $iosComplianceParams
                 Write-LogMessage -Message "Created iOS compliance policy" -Type Success
                 $compliancePolicies += $result
             }
@@ -612,7 +618,7 @@ function New-TenantIntune {
         }
         else {
             try {
-                $androidComplianceBody = @{
+                $androidComplianceParams = @{
                     "@odata.type" = "#microsoft.graph.androidCompliancePolicy"
                     displayName = $androidComplianceName
                     description = "Corporate compliance requirements for Android devices"
@@ -630,20 +636,27 @@ function New-TenantIntune {
                     securityPreventInstallAppsFromUnknownSources = $true
                     securityDisableUsbDebugging = $true
                     securityRequireVerifyApps = $true
-                    deviceThreatProtectionEnabled = $false
-                    deviceThreatProtectionRequiredSecurityLevel = "unavailable"
-                    
-                    # OS Version
+                    securityBlockJailbrokenDevices = $true
+                    storageRequireEncryption = $true
                     minAndroidSecurityPatchLevel = "2023-01-01"
                     osMinimumVersion = "8.0"
                     osMaximumVersion = $null
                     
-                    # Additional Security
-                    storageRequireEncryption = $true
-                    securityBlockJailbrokenDevices = $true
+                    # Required: Scheduled Actions
+                    scheduledActionsForRule = @(
+                        @{
+                            ruleName = "PasswordRequired" 
+                            scheduledActionConfigurations = @(
+                                @{
+                                    actionType = "block"
+                                    gracePeriodHours = 72
+                                }
+                            )
+                        }
+                    )
                 }
                 
-                $result = Invoke-GraphRequestWithRetry -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies" -Method POST -Body $androidComplianceBody
+                $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $androidComplianceParams
                 Write-LogMessage -Message "Created Android compliance policy" -Type Success
                 $compliancePolicies += $result
             }
