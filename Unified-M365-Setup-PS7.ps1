@@ -424,12 +424,8 @@ function Invoke-ModuleOperationWithAuth {
         # Dot-source and execute with TenantState parameter
         . $localPath
         
-        # Pass TenantState if it exists
-        if ($script:TenantState) {
-            $result = & $FunctionName -TenantState $script:TenantState
-        } else {
-            $result = & $FunctionName
-        }
+        # Execute function without parameters - modules handle TenantState via script scope
+$result = & $FunctionName
         
         if ($result) {
             Write-LogMessage -Message "$ModuleName operation completed successfully" -Type Success
