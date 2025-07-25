@@ -185,16 +185,8 @@ function Connect-ForVerification {
             # Ignore disconnect errors
         }
         
-        # Updated scopes to include Conditional Access permissions
-        $requiredScopes = @(
-            "Organization.Read.All",
-            "Directory.Read.All",
-            "Policy.ReadWrite.ConditionalAccess",  # Required for CA policies
-            "Group.Read.All"                       # Needed for NoMFA group check
-        )
-        
-        # Connect with all required scopes
-        Connect-MgGraph -Scopes $requiredScopes -NoWelcome -ErrorAction Stop | Out-Null
+        # Basic connection with minimal scopes
+        Connect-MgGraph -Scopes $script:Config.BasicScopes -NoWelcome -ErrorAction Stop | Out-Null
         
         # Quick tenant verification
         $org = Get-MgOrganization -ErrorAction Stop | Select-Object -First 1
@@ -224,7 +216,7 @@ function Connect-ForVerification {
             VerifiedAt = Get-Date
         }
         
-        Write-LogMessage -Message "Tenant verified successfully with required permissions" -Type Success
+        Write-LogMessage -Message "Tenant verified successfully" -Type Success
         return $true
     }
     catch {

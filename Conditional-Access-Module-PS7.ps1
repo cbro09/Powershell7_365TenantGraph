@@ -27,8 +27,7 @@
 $RequiredModules = @(
     'Microsoft.Graph.Identity.DirectoryManagement',
     'Microsoft.Graph.Groups', 
-    'Microsoft.Graph.Identity.SignIns',
-    'Policy.ReadWrite.ConditionalAccess'
+    'Microsoft.Graph.Identity.SignIns'
 )
 
 foreach ($Module in $RequiredModules) {
@@ -562,6 +561,7 @@ function New-CAPolicyC005 {
 }
 
 # === Helper Functions ===
+# === Helper Functions ===
 function Test-CAPolicyPrerequisites {
     <#
     .SYNOPSIS
@@ -586,15 +586,28 @@ function Test-CAPolicyPrerequisites {
     }
     $prerequisites['Required Modules'] = $missingModules.Count -eq 0
     
-    # Test Graph permissions
+    # Test Graph permissions by checking scopes
     try {
-        # Try to read CA policies to test permissions
-        Get-MgIdentityConditionalAccessPolicy -Top 1 -ErrorAction Stop | Out-Null
-        $prerequisites['Graph Permissions'] = $true
+        $currentScopes = (Get-MgContext).Scopes
+        $requiredScopes = @(
+            "Policy.ReadWrite.ConditionalAccess",
+            "Directory.Read.All",
+            "Group.Read.All"
+        )
+        
+        $missingScopes = $requiredScopes | Where-Object { $_ -notin $currentScopes }
+        
+        if ($missingScopes.Count -eq 0) {
+            $prerequisites['Graph Permissions'] = $true
+        }
+        else {
+            Write-LogMessage -Message "Missing required permissions: $($missingScopes -join ', ')" -Type Warning
+            $prerequisites['Graph Permissions'] = $false
+        }
     }
     catch {
+        Write-LogMessage -Message "Error checking permissions: $($_.Exception.Message)" -Type Error
         $prerequisites['Graph Permissions'] = $false
-        Write-LogMessage -Message "Insufficient permissions for Conditional Access. Ensure Policy.ReadWrite.ConditionalAccess scope is granted." -Type Warning
     }
     
     Write-Host "=== Conditional Access Prerequisites ===" -ForegroundColor Cyan
@@ -603,6 +616,12 @@ function Test-CAPolicyPrerequisites {
         $color = if ($prereq.Value) { "Green" } else { "Red" }
         Write-Host ("{0}: " -f $prereq.Key) -ForegroundColor Gray -NoNewline
         Write-Host $status -ForegroundColor $color
+        
+        # Show missing scopes if permissions check failed
+        if ($prereq.Key -eq 'Graph Permissions' -and -not $prereq.Value -and $missingScopes) {
+            Write-Host "  Missing Scopes: $($missingScopes -join ', ')" -ForegroundColor Yellow
+            Write-Host "  Run: Connect-MgGraph -Scopes '$($requiredScopes -join "','")'" -ForegroundColor Gray
+        }
     }
     Write-Host ""
     
