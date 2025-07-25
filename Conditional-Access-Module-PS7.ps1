@@ -27,7 +27,8 @@
 $RequiredModules = @(
     'Microsoft.Graph.Identity.DirectoryManagement',
     'Microsoft.Graph.Groups', 
-    'Microsoft.Graph.Identity.SignIns'
+    'Microsoft.Graph.Identity.SignIns',
+    'Policy.ReadWrite.ConditionalAccess'
 )
 
 foreach ($Module in $RequiredModules) {
