@@ -481,14 +481,14 @@ function New-TenantIntune {
         }
         
         # =================================================================
-        # COMPLIANCE POLICIES
+        # COMPLIANCE POLICIES (FIXED - MDE INDEPENDENT)
         # =================================================================
-        Write-LogMessage -Message "Creating comprehensive compliance policies..." -Type Info
+        Write-LogMessage -Message "Creating SIMPLIFIED compliance policies (MDE-independent)..." -Type Info
         
-        # Windows Compliance Policy
-        Write-LogMessage -Message "Creating Windows compliance policy..." -Type Info
+        # Windows Compliance Policy - SIMPLIFIED
+        Write-LogMessage -Message "Creating Windows compliance policy (simplified)..." -Type Info
         
-        $windowsComplianceName = "Windows 10/11 Corporate Compliance"
+        $windowsComplianceName = "Windows 10/11 Basic Compliance"
         if (Test-CompliancePolicyExists -PolicyName $windowsComplianceName) {
             Write-LogMessage -Message "Compliance policy '$windowsComplianceName' already exists, skipping creation" -Type Warning
             $compliancePolicies += @{ displayName = $windowsComplianceName; id = "existing" }
@@ -498,9 +498,9 @@ function New-TenantIntune {
                 $windowsComplianceParams = @{
                     "@odata.type" = "#microsoft.graph.windows10CompliancePolicy"
                     displayName = $windowsComplianceName
-                    description = "Corporate compliance requirements for Windows 10/11 devices"
+                    description = "Basic compliance requirements for Windows 10/11 devices (no MDE required)"
                     
-                    # Password Requirements
+                    # Basic Password Requirements (WORKING)
                     passwordRequired = $true
                     passwordBlockSimple = $true
                     passwordRequiredType = "alphanumeric"
@@ -510,25 +510,25 @@ function New-TenantIntune {
                     passwordPreviousPasswordBlockCount = 5
                     passwordRequireToUnlockFromIdle = $true
                     
-                    # Device Health
-                    requireHealthyDeviceReport = $true
+                    # Basic Device Requirements (WORKING)
                     osMinimumVersion = "10.0.18362"
                     osMaximumVersion = $null
                     
-                    # Security Requirements
-                    earlyLaunchAntiMalwareDriverEnabled = $true
+                    # Basic Security (WORKING - No MDE required)
                     bitLockerEnabled = $true
-                    secureBootEnabled = $true
-                    codeIntegrityEnabled = $true
                     storageRequireEncryption = $true
-                    tpmRequired = $true
-                    
-                    # Firewall and Antivirus
                     activeFirewallRequired = $true
                     defenderEnabled = $true
-                    rtpEnabled = $true
                     antivirusRequired = $true
                     antiSpywareRequired = $true
+                    
+                    # REMOVED PROBLEMATIC MDE-DEPENDENT SETTINGS:
+                    # requireHealthyDeviceReport = $true              # ❌ Requires MDE
+                    # earlyLaunchAntiMalwareDriverEnabled = $true     # ❌ Requires MDE  
+                    # codeIntegrityEnabled = $true                    # ❌ Requires MDE
+                    # secureBootEnabled = $true                       # ❌ Can cause issues
+                    # tpmRequired = $true                             # ❌ Not all devices have TPM
+                    # rtpEnabled = $true                              # ❌ MDE dependent
                     
                     # Required: Scheduled Actions
                     scheduledActionsForRule = @(
@@ -545,18 +545,23 @@ function New-TenantIntune {
                 }
                 
                 $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $windowsComplianceParams
-                Write-LogMessage -Message "Created Windows compliance policy" -Type Success
+                Write-LogMessage -Message "✅ Created SIMPLIFIED Windows compliance policy (no MDE required)" -Type Success
                 $compliancePolicies += $result
             }
             catch {
-                Write-LogMessage -Message "Failed to create Windows compliance policy - $($_.Exception.Message)" -Type Error
+                Write-LogMessage -Message "❌ Failed to create Windows compliance policy - $($_.Exception.Message)" -Type Error
+                # Enhanced error logging
+                if ($_.Exception.Response) {
+                    Write-LogMessage -Message "Status Code: $($_.Exception.Response.StatusCode)" -Type Error
+                    Write-LogMessage -Message "Error Details: $($_.Exception.Response.ReasonPhrase)" -Type Error
+                }
             }
         }
         
-        # iOS Compliance Policy
+        # iOS Compliance Policy - WORKING VERSION
         Write-LogMessage -Message "Creating iOS compliance policy..." -Type Info
         
-        $iosComplianceName = "iOS Corporate Compliance"
+        $iosComplianceName = "iOS Basic Compliance"
         if (Test-CompliancePolicyExists -PolicyName $iosComplianceName) {
             Write-LogMessage -Message "Compliance policy '$iosComplianceName' already exists, skipping creation" -Type Warning
             $compliancePolicies += @{ displayName = $iosComplianceName; id = "existing" }
@@ -566,7 +571,7 @@ function New-TenantIntune {
                 $iosComplianceParams = @{
                     "@odata.type" = "#microsoft.graph.iosCompliancePolicy"
                     displayName = $iosComplianceName
-                    description = "Corporate compliance requirements for iOS devices"
+                    description = "Basic compliance requirements for iOS devices"
                     
                     # Password Requirements
                     passcodeRequired = $true
@@ -582,7 +587,7 @@ function New-TenantIntune {
                     # Device Security
                     jailbroken = $false
                     securityBlockJailbrokenDevices = $true
-                    osMinimumVersion = "14.0"
+                    osMinimumVersion = "15.0"
                     osMaximumVersion = $null
                     
                     # Required: Scheduled Actions
@@ -600,18 +605,18 @@ function New-TenantIntune {
                 }
                 
                 $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $iosComplianceParams
-                Write-LogMessage -Message "Created iOS compliance policy" -Type Success
+                Write-LogMessage -Message "✅ Created iOS compliance policy" -Type Success
                 $compliancePolicies += $result
             }
             catch {
-                Write-LogMessage -Message "Failed to create iOS compliance policy - $($_.Exception.Message)" -Type Error
+                Write-LogMessage -Message "❌ Failed to create iOS compliance policy - $($_.Exception.Message)" -Type Error
             }
         }
         
-        # Android Compliance Policy
+        # Android Compliance Policy - WORKING VERSION  
         Write-LogMessage -Message "Creating Android compliance policy..." -Type Info
         
-        $androidComplianceName = "Android Corporate Compliance"
+        $androidComplianceName = "Android Basic Compliance"
         if (Test-CompliancePolicyExists -PolicyName $androidComplianceName) {
             Write-LogMessage -Message "Compliance policy '$androidComplianceName' already exists, skipping creation" -Type Warning
             $compliancePolicies += @{ displayName = $androidComplianceName; id = "existing" }
@@ -621,7 +626,7 @@ function New-TenantIntune {
                 $androidComplianceParams = @{
                     "@odata.type" = "#microsoft.graph.androidCompliancePolicy"
                     displayName = $androidComplianceName
-                    description = "Corporate compliance requirements for Android devices"
+                    description = "Basic compliance requirements for Android devices"
                     
                     # Password Requirements
                     passwordRequired = $true
@@ -657,28 +662,93 @@ function New-TenantIntune {
                 }
                 
                 $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $androidComplianceParams
-                Write-LogMessage -Message "Created Android compliance policy" -Type Success
+                Write-LogMessage -Message "✅ Created Android compliance policy" -Type Success
                 $compliancePolicies += $result
             }
             catch {
-                Write-LogMessage -Message "Failed to create Android compliance policy - $($_.Exception.Message)" -Type Error
+                Write-LogMessage -Message "❌ Failed to create Android compliance policy - $($_.Exception.Message)" -Type Error
             }
         }
         
+        # macOS Compliance Policy - NEW ADDITION
+        Write-LogMessage -Message "Creating macOS compliance policy..." -Type Info
+        
+        $macComplianceName = "macOS Basic Compliance"
+        if (Test-CompliancePolicyExists -PolicyName $macComplianceName) {
+            Write-LogMessage -Message "Compliance policy '$macComplianceName' already exists, skipping creation" -Type Warning
+            $compliancePolicies += @{ displayName = $macComplianceName; id = "existing" }
+        }
+        else {
+            try {
+                $macComplianceParams = @{
+                    "@odata.type" = "#microsoft.graph.macOSCompliancePolicy"
+                    displayName = $macComplianceName
+                    description = "Basic compliance requirements for macOS devices"
+                    
+                    # Password Requirements
+                    passwordRequired = $true
+                    passwordBlockSimple = $true
+                    passwordMinimumLength = 8
+                    passwordMinutesOfInactivityBeforeLock = 15
+                    passwordExpirationDays = 90
+                    passwordPreviousPasswordBlockCount = 5
+                    passwordMinimumCharacterSetCount = 3
+                    passwordRequiredType = "alphanumeric"
+                    
+                    # Device Security
+                    osMinimumVersion = "12.0"
+                    osMaximumVersion = $null
+                    systemIntegrityProtectionEnabled = $true
+                    deviceThreatProtectionEnabled = $false
+                    deviceThreatProtectionRequiredSecurityLevel = "unavailable"
+                    storageRequireEncryption = $true
+                    firewallEnabled = $true
+                    firewallBlockAllIncoming = $false
+                    firewallEnableStealthMode = $true
+                    
+                    # Required: Scheduled Actions
+                    scheduledActionsForRule = @(
+                        @{
+                            ruleName = "PasswordRequired"
+                            scheduledActionConfigurations = @(
+                                @{
+                                    actionType = "block"
+                                    gracePeriodHours = 72
+                                }
+                            )
+                        }
+                    )
+                }
+                
+                $result = New-MgDeviceManagementDeviceCompliancePolicy -BodyParameter $macComplianceParams
+                Write-LogMessage -Message "✅ Created macOS compliance policy" -Type Success
+                $compliancePolicies += $result
+            }
+            catch {
+                Write-LogMessage -Message "❌ Failed to create macOS compliance policy - $($_.Exception.Message)" -Type Error
+            }
+        }
+
+# ALSO REPLACE THE POLICY ASSIGNMENTS SECTION WITH THIS:
+
         # =================================================================
-        # POLICY ASSIGNMENTS
+        # POLICY ASSIGNMENTS (FIXED GROUP MAPPINGS)
         # =================================================================
         Write-LogMessage -Message "Assigning policies to device groups..." -Type Info
         
         $policyAssignments = @{
-            "Windows Defender Security" = "Windows Devices"
-            "BitLocker Device Encryption" = "Windows Devices" 
-            "OneDrive Business Configuration" = "Windows Devices"
-            "Windows LAPS Configuration" = "Windows Devices"
-            "Power Management Settings" = "Windows Devices"
-            "Windows 10/11 Corporate Compliance" = "Windows Devices"
-            "iOS Corporate Compliance" = "iOS Devices"
-            "Android Corporate Compliance" = "Android Devices"
+            # Configuration Policies (to Windows AutoPilot group)
+            "Windows Defender Security" = "Windows AutoPilot Devices"
+            "BitLocker Device Encryption" = "Windows AutoPilot Devices" 
+            "OneDrive Business Configuration" = "Windows AutoPilot Devices"
+            "Windows LAPS Configuration" = "Windows AutoPilot Devices"
+            "Power Management Settings" = "Windows AutoPilot Devices"
+            
+            # Compliance Policies (to platform-specific groups)
+            "Windows 10/11 Basic Compliance" = "Windows AutoPilot Devices"
+            "iOS Basic Compliance" = "iOS Devices"
+            "Android Basic Compliance" = "Android Devices"
+            "macOS Basic Compliance" = "MacOS Devices"
         }
         
         foreach ($policy in $policies) {
@@ -739,6 +809,7 @@ function New-TenantIntune {
                 }
             }
         }
+
         
         # =================================================================
         # SUMMARY
