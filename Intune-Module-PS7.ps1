@@ -144,17 +144,17 @@ function New-TenantIntune {
         foreach ($groupName in $requiredGroups.Keys) {
             if (-not $script:TenantState.CreatedGroups.ContainsKey($groupName)) {
                 try {
-                    $groupBody = @{
-                        displayName = $groupName
-                        description = "Dynamic group for $groupName"
-                        groupTypes = @("DynamicMembership")
-                        membershipRule = $requiredGroups[$groupName]
-                        membershipRuleProcessingState = "On"
-                        mailEnabled = $false
-                        securityEnabled = $true
-                    }
+                    $mailNickName = ($groupName -replace "[^a-zA-Z0-9]", "")
                     
-                    $group = Invoke-GraphRequestWithRetry -Uri "https://graph.microsoft.com/v1.0/groups" -Method POST -Body $groupBody
+                    $group = New-MgGroup -DisplayName $groupName `
+                        -Description "Dynamic group for $groupName" `
+                        -GroupTypes @("DynamicMembership") `
+                        -MembershipRule $requiredGroups[$groupName] `
+                        -MembershipRuleProcessingState "On" `
+                        -MailEnabled:$false `
+                        -SecurityEnabled:$true `
+                        -MailNickName $mailNickName
+                    
                     $script:TenantState.CreatedGroups[$groupName] = $group.id
                     Write-LogMessage -Message "Created group '$groupName'" -Type Success
                 }
