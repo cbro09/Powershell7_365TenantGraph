@@ -735,101 +735,117 @@ function New-TenantIntune {
             }
         }
 
-# ALSO REPLACE THE POLICY ASSIGNMENTS SECTION WITH THIS:
 
-        # =================================================================
-        # POLICY ASSIGNMENTS (FIXED GROUP MAPPINGS)
-        # =================================================================
+# =================================================================
+# POLICY ASSIGNMENTS 
+# =================================================================
 
-# Get real IDs for existing policies before assignment
+# Get real policy IDs for existing policies
+$allConfigPolicies = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations"
+$allCompliancePolicies = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies"
+
+# Update policy objects with real IDs
 foreach ($policy in $policies) {
     if ($policy.id -eq "existing") {
-        $existingPolicy = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations?`$filter=displayName eq '$($policy.displayName)'"
-        if ($existingPolicy.value.Count -gt 0) {
-            $policy.id = $existingPolicy.value[0].id
+        $matchingPolicy = $allConfigPolicies.value | Where-Object { $_.displayName -eq $policy.displayName }
+        if ($matchingPolicy) {
+            $policy.id = $matchingPolicy.id
+            Write-LogMessage -Message "Found existing config policy ID: $($policy.id)" -Type Info
         }
     }
 }
 
-# Get real IDs for existing compliance policies  
 foreach ($policy in $compliancePolicies) {
     if ($policy.id -eq "existing") {
-        $existingPolicy = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies?`$filter=displayName eq '$($policy.displayName)'"
-        if ($existingPolicy.value.Count -gt 0) {
-            $policy.id = $existingPolicy.value[0].id
+        $matchingPolicy = $allCompliancePolicies.value | Where-Object { $_.displayName -eq $policy.displayName }
+        if ($matchingPolicy) {
+            $policy.id = $matchingPolicy.id
+            Write-LogMessage -Message "Found existing compliance policy ID: $($policy.id)" -Type Info
         }
     }
 }
 
-        Write-LogMessage -Message "Assigning policies to device groups..." -Type Info
-        
-        $policyAssignments = @{
-            # Configuration Policies (to Windows AutoPilot group)
-            "Windows Defender Security" = "Windows AutoPilot Devices"
-            "BitLocker Device Encryption" = "Windows AutoPilot Devices" 
-            "OneDrive Business Configuration" = "Windows AutoPilot Devices"
-            "Windows LAPS Configuration" = "Windows AutoPilot Devices"
-            "Power Management Settings" = "Windows AutoPilot Devices"
-            
-            # Compliance Policies (to platform-specific groups)
-            "Windows 10/11 Basic Compliance" = "Windows AutoPilot Devices"
-            "iOS Basic Compliance" = "iOS Devices"
-            "Android Basic Compliance" = "Android Devices"
-            "macOS Basic Compliance" = "MacOS Devices"
-        }
-        
-        foreach ($policy in $policies) {
-            if ($policyAssignments.ContainsKey($policy.displayName)) {
-                $targetGroupName = $policyAssignments[$policy.displayName]
-                $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
-                
-                if ($targetGroupId) {
-                    try {
-                        $assignmentBody = @{
-    deviceConfigurationGroupAssignments = @(
-        @{
-            targetGroupId = $targetGroupId
-        }
-    )
+Write-LogMessage -Message "Assigning policies to device groups..." -Type Info
+
+$policyAssignments = @{
+    "Windows Defender Security" = "Windows AutoPilot Devices"
+    "BitLocker Device Encryption" = "Windows AutoPilot Devices" 
+    "OneDrive Business Configuration" = "Windows AutoPilot Devices"
+    "Windows LAPS Configuration" = "Windows AutoPilot Devices"
+    "Power Management Settings" = "Windows AutoPilot Devices"
+    "Windows 10/11 Basic Compliance" = "Windows AutoPilot Devices"
+    "iOS Basic Compliance" = "iOS Devices"
+    "Android Basic Compliance" = "Android Devices"
+    "macOS Basic Compliance" = "MacOS Devices"
 }
 
-$assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations/$($policy.id)/assign"
-                        Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
-                        Write-LogMessage -Message "Assigned policy '$($policy.displayName)' to group '$targetGroupName'" -Type Success
-                    }
-                    catch {
-                        Write-LogMessage -Message "Failed to assign policy '$($policy.displayName)' - $($_.Exception.Message)" -Type Error
-                    }
+# Assign configuration policies - FIXED STRUCTURE
+foreach ($policy in $policies) {
+    if ($policyAssignments.ContainsKey($policy.displayName) -and $policy.id -ne "existing") {
+        $targetGroupName = $policyAssignments[$policy.displayName]
+        $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
+        
+        if ($targetGroupId) {
+            try {
+                # CORRECT JSON STRUCTURE
+                $assignmentBody = @{
+                    assignments = @(
+                        @{
+                            target = @{
+                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
+                                groupId = $targetGroupId
+                            }
+                        }
+                    )
                 }
+                
+                $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceConfigurations/$($policy.id)/assign"
+                Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
+                Write-LogMessage -Message "✅ Assigned config policy '$($policy.displayName)' to '$targetGroupName'" -Type Success
+            }
+            catch {
+                Write-LogMessage -Message "❌ Config policy assignment failed: $($_.Exception.Message)" -Type Error
             }
         }
-        
-        # Assign compliance policies
-        foreach ($policy in $compliancePolicies) {
-            if ($policyAssignments.ContainsKey($policy.displayName)) {
-                $targetGroupName = $policyAssignments[$policy.displayName]
-                $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
-                
-                if ($targetGroupId) {
-                    try {
-                        $assignmentBody = @{
-    deviceCompliancePolicyGroupAssignments = @(
-        @{
-            targetGroupId = $targetGroupId
+        else {
+            Write-LogMessage -Message "⚠️ Group '$targetGroupName' not found" -Type Warning
         }
-    )
+    }
 }
 
-$assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies/$($policy.id)/assign"
-                        Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
-                        Write-LogMessage -Message "Assigned compliance policy '$($policy.displayName)' to group '$targetGroupName'" -Type Success
-                    }
-                    catch {
-                        Write-LogMessage -Message "Failed to assign compliance policy '$($policy.displayName)' - $($_.Exception.Message)" -Type Error
-                    }
+# Assign compliance policies - FIXED STRUCTURE  
+foreach ($policy in $compliancePolicies) {
+    if ($policyAssignments.ContainsKey($policy.displayName) -and $policy.id -ne "existing") {
+        $targetGroupName = $policyAssignments[$policy.displayName]
+        $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
+        
+        if ($targetGroupId) {
+            try {
+                # CORRECT JSON STRUCTURE
+                $assignmentBody = @{
+                    assignments = @(
+                        @{
+                            target = @{
+                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
+                                groupId = $targetGroupId
+                            }
+                        }
+                    )
                 }
+                
+                $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies/$($policy.id)/assign"
+                Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
+                Write-LogMessage -Message "✅ Assigned compliance policy '$($policy.displayName)' to '$targetGroupName'" -Type Success
+            }
+            catch {
+                Write-LogMessage -Message "❌ Compliance policy assignment failed: $($_.Exception.Message)" -Type Error
             }
         }
+        else {
+            Write-LogMessage -Message "⚠️ Group '$targetGroupName' not found" -Type Warning
+        }
+    }
+}
 
         
         # =================================================================
