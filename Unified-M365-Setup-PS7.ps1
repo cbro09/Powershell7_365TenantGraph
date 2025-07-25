@@ -29,7 +29,8 @@ $script:Config = @{
     # Basic scopes for tenant verification only
     BasicScopes = @(
         "Organization.Read.All",
-        "Directory.Read.All"
+        "Directory.Read.All",
+        "Policy.ReadWrite.ConditionalAccess"
     )
 }
 
