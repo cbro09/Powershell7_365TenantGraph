@@ -786,15 +786,16 @@ foreach ($policy in $compliancePolicies) {
                 if ($targetGroupId) {
                     try {
                         $assignmentBody = @{
-                            assignments = @(
-                                @{
-                                    target = @{
-                                        '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                        groupId = $targetGroupId
-                                    }
-                                }
-                            )
-                        }
+    assignments = @(
+        @{
+            "@odata.type" = "#microsoft.graph.deviceConfigurationAssignment"
+            target = @{
+                "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
+                groupId = $targetGroupId
+            }
+        }
+    )
+}
                         
                         $assignUri = "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations/$($policy.id)/assign"
                         Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
@@ -816,15 +817,16 @@ foreach ($policy in $compliancePolicies) {
                 if ($targetGroupId) {
                     try {
                         $assignmentBody = @{
-                            assignments = @(
-                                @{
-                                    target = @{
-                                        '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                        groupId = $targetGroupId
-                                    }
-                                }
-                            )
-                        }
+    assignments = @(
+        @{
+            "@odata.type" = "#microsoft.graph.deviceConfigurationAssignment"
+            target = @{
+                "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
+                groupId = $targetGroupId
+            }
+        }
+    )
+}
                         
                         $assignUri = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicies/$($policy.id)/assign"
                         Invoke-GraphRequestWithRetry -Uri $assignUri -Method POST -Body $assignmentBody
