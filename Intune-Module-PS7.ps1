@@ -752,7 +752,7 @@ function New-TenantIntune {
         }
         
         foreach ($policy in $policies) {
-            if ($policy.id -ne "existing" -and $policyAssignments.ContainsKey($policy.displayName)) {
+            if ($policyAssignments.ContainsKey($policy.displayName)) {
                 $targetGroupName = $policyAssignments[$policy.displayName]
                 $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
                 
@@ -782,7 +782,7 @@ function New-TenantIntune {
         
         # Assign compliance policies
         foreach ($policy in $compliancePolicies) {
-            if ($policy.id -ne "existing" -and $policyAssignments.ContainsKey($policy.displayName)) {
+            if ($policyAssignments.ContainsKey($policy.displayName)) {
                 $targetGroupName = $policyAssignments[$policy.displayName]
                 $targetGroupId = $script:TenantState.CreatedGroups[$targetGroupName]
                 
