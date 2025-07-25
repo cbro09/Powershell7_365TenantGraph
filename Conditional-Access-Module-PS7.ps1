@@ -50,9 +50,14 @@ function New-TenantCAPolices {
     .DESCRIPTION
         Creates standardized Conditional Access policies including MFA requirements,
         device compliance, and risk-based access controls. Updates tenant state with policy information.
+    .PARAMETER TenantState
+        Optional hashtable containing tenant information. If not provided, will attempt to gather from Graph.
     #>
     [CmdletBinding()]
-    param()
+    param(
+        [Parameter(Mandatory=$false)]
+        [hashtable]$TenantState
+    )
     
     try {
         Write-LogMessage -Message "Starting Conditional Access policies creation process..." -Type Info
@@ -63,10 +68,27 @@ function New-TenantCAPolices {
             return $false
         }
         
-        # Verify tenant state
-        if (-not $script:TenantState) {
-            Write-LogMessage -Message "No tenant state found. Please connect and verify tenant first." -Type Error
-            return $false
+        # Handle TenantState - use provided or gather from Graph
+        if ($TenantState) {
+            $script:TenantState = $TenantState
+            Write-LogMessage -Message "Using provided TenantState" -Type Info
+        }
+        elseif (-not $script:TenantState) {
+            try {
+                $org = Get-MgOrganization -ErrorAction Stop | Select-Object -First 1
+                $currentUser = (Get-MgContext).Account
+                $script:TenantState = @{
+                    TenantName = $org.DisplayName
+                    AdminEmail = $currentUser
+                    TenantId = $org.Id
+                    CreatedGroups = @{}
+                }
+                Write-LogMessage -Message "Gathered tenant information from Graph API" -Type Info
+            }
+            catch {
+                Write-LogMessage -Message "Failed to gather tenant information: $($_.Exception.Message)" -Type Error
+                return $false
+            }
         }
         
         # Check prerequisites
@@ -91,7 +113,7 @@ function New-TenantCAPolices {
         $noMfaGroupId = $null
         if ($script:TenantState.CreatedGroups -and $script:TenantState.CreatedGroups["NoMFA Exemption"]) {
             $noMfaGroupId = $script:TenantState.CreatedGroups["NoMFA Exemption"]
-            Write-LogMessage -Message "Found NoMFA Exemption group: $noMfaGroupId" -Type Success
+            Write-LogMessage -Message "Found NoMFA Exemption group in TenantState: $noMfaGroupId" -Type Success
         }
         else {
             # Try to find the group directly
@@ -99,7 +121,12 @@ function New-TenantCAPolices {
                 $noMfaGroup = Get-MgGroup -Filter "displayName eq 'NoMFA Exemption'" -ErrorAction Stop
                 if ($noMfaGroup) {
                     $noMfaGroupId = $noMfaGroup.Id
-                    Write-LogMessage -Message "Located NoMFA Exemption group: $noMfaGroupId" -Type Success
+                    # Update TenantState if we found the group
+                    if (-not $script:TenantState.CreatedGroups) {
+                        $script:TenantState.CreatedGroups = @{}
+                    }
+                    $script:TenantState.CreatedGroups["NoMFA Exemption"] = $noMfaGroupId
+                    Write-LogMessage -Message "Located NoMFA Exemption group via Graph: $noMfaGroupId" -Type Success
                 }
                 else {
                     Write-LogMessage -Message "NoMFA Exemption group not found. Policies will apply to all users." -Type Warning
