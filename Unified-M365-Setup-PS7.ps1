@@ -681,7 +681,7 @@ function Start-TenantSetup {
                 }
                 8 {
                     Write-LogMessage -Message "Launching: Admin Role Creation Module with Core scopes" -Type Info
-                    Invoke-ModuleOperationWithAuth -ModuleName "Admin Accounts" -FunctionName "New-TenantAdminAccounts" | Out-Null
+                    Invoke-ModuleOperationWithAuth -ModuleName "AdminCreation" -FunctionName "New-TenantAdminAccounts" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 9 {
