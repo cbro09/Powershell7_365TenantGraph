@@ -135,10 +135,20 @@ function New-TenantAdminAccounts {
             },
             @{
                 Role = "BG02"
-                UPN = "BG02@$defaultDomain" 
+                UPN = "BITS-Admin-BG02@$defaultDomain" 
                 DisplayName = "BG02"
                 GivenName = "Break Glass"
                 Surname = "02"
+                JobTitle = "Emergency Access Account (NoMFA Exempt)"
+                PasswordLength = 18
+                Groups = @("BITS Admin", "NoMFA Exemption")
+            }
+            @{
+                Role = "BG01"
+                UPN = "BITS-Admin-BG01@$defaultDomain" 
+                DisplayName = "BG01"
+                GivenName = "Break Glass"
+                Surname = "01"
                 JobTitle = "Emergency Access Account"
                 PasswordLength = 18
                 Groups = @("BITS Admin", "NoMFA Exemption")
@@ -299,7 +309,7 @@ function New-AdminUserAccount {
             AccountEnabled = $true
             PasswordProfile = $passwordProfile
             MailNickname = $AccountConfig.DisplayName -replace '[^a-zA-Z0-9]', ''
-            UsageLocation = "US"  # Default - adjust as needed
+            UsageLocation = "UK"  # Default - adjust as needed
         }
         
         # Create the user
