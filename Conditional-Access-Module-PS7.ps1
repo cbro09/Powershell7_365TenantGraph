@@ -42,50 +42,53 @@ foreach ($Module in $RequiredModules) {
     }
 }
 function Test-SecurityDefaults {
-    <#
-    .SYNOPSIS
-        Checks if Security Defaults is currently enabled
-    #>
     try {
-        $securityDefaults = Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy -ErrorAction Stop
-        return $securityDefaults.IsEnabled
+        # Use the correct parameter approach from Microsoft docs
+        $result = Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy -ErrorAction Stop
+        return $result.IsEnabled
     }
     catch {
-        Write-LogMessage -Message "Error checking Security Defaults status: $($_.Exception.Message)" -Type Error
-        return $null
+        Write-LogMessage -Message "Cannot check Security Defaults status: $($_.Exception.Message)" -Type Warning
+        # Try alternative method
+        try {
+            $uri = "https://graph.microsoft.com/v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
+            $result = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
+            return $result.isEnabled
+        }
+        catch {
+            Write-LogMessage -Message "Both methods failed - will proceed with assumption" -Type Warning
+            return $null
+        }
     }
 }
 
 function Disable-SecurityDefaults {
-    <#
-    .SYNOPSIS
-        Disables Security Defaults to allow Conditional Access policies
-    #>
     try {
-        Write-LogMessage -Message "Security Defaults is enabled - this blocks Conditional Access policy creation" -Type Warning
-        Write-LogMessage -Message "Microsoft recommends disabling Security Defaults when implementing CA policies" -Type Info
+        Write-LogMessage -Message "Disabling Security Defaults (Microsoft recommended when using CA policies)..." -Type Info
         
-        $confirmation = Read-Host "Disable Security Defaults to enable CA policy creation? (Y/N)"
-        if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
-            Write-LogMessage -Message "Security Defaults remains enabled - CA policy creation cancelled" -Type Warning
-            return $false
-        }
-        
-        Write-LogMessage -Message "Disabling Security Defaults..." -Type Info
+        # Method 1: Use the official PowerShell cmdlet (Microsoft recommended)
         $body = @{ isEnabled = $false }
         Update-MgPolicyIdentitySecurityDefaultEnforcementPolicy -BodyParameter $body -ErrorAction Stop
         
-        Write-LogMessage -Message "Security Defaults disabled successfully" -Type Success
-        Write-LogMessage -Message "Conditional Access policies will now provide security protection" -Type Info
-        
-        # Brief wait for policy propagation
-        Start-Sleep -Seconds 10
-        
+        Write-LogMessage -Message "Security Defaults disabled successfully using PowerShell cmdlet" -Type Success
         return $true
     }
     catch {
-        Write-LogMessage -Message "Failed to disable Security Defaults: $($_.Exception.Message)" -Type Error
-        return $false
+        Write-LogMessage -Message "PowerShell cmdlet failed, trying direct Graph API..." -Type Warning
+        
+        # Method 2: Fallback to direct Graph API
+        try {
+            $uri = "https://graph.microsoft.com/v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
+            $body = @{ isEnabled = $false }
+            Invoke-MgGraphRequest -Method PATCH -Uri $uri -Body $body -ErrorAction Stop
+            
+            Write-LogMessage -Message "Security Defaults disabled successfully using Graph API" -Type Success
+            return $true
+        }
+        catch {
+            Write-LogMessage -Message "Failed to disable Security Defaults: $($_.Exception.Message)" -Type Error
+            return $false
+        }
     }
 }
 # === Main Conditional Access Function ===
