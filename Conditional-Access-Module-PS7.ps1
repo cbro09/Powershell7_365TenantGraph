@@ -42,42 +42,6 @@ foreach ($Module in $RequiredModules) {
     }
 }
 
-function Test-SecurityDefaults {
-    try {
-        $uri = "https://graph.microsoft.com/beta/policies/identitySecurityDefaultsEnforcementPolicy"
-        $result = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
-        return $result.isEnabled
-    }
-    catch {
-        Write-LogMessage -Message "Cannot check Security Defaults: $($_.Exception.Message)" -Type Warning
-        return $null
-    }
-}
-
-function Disable-SecurityDefaults {
-    try {
-        Write-LogMessage -Message "Disabling Security Defaults (required for CA policies)..." -Type Info
-        
-        $confirmation = Read-Host "Disable Security Defaults to enable CA policies? (Y/N)"
-        if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
-            return $false
-        }
-        
-        $uri = "https://graph.microsoft.com/beta/policies/identitySecurityDefaultsEnforcementPolicy"
-        $body = @{ isEnabled = $false } | ConvertTo-Json
-        
-        Invoke-MgGraphRequest -Method PATCH -Uri $uri -Body $body -ErrorAction Stop
-        
-        Write-LogMessage -Message "Security Defaults disabled successfully" -Type Success
-        Start-Sleep -Seconds 10
-        return $true
-    }
-    catch {
-        Write-LogMessage -Message "Failed to disable: $($_.Exception.Message)" -Type Error
-        return $false
-    }
-}
-
 # === Main Conditional Access Function ===
 function New-TenantCAPolices {
     <#
@@ -126,6 +90,17 @@ function New-TenantCAPolices {
             Write-LogMessage -Message "Prerequisites not met for Conditional Access policy creation" -Type Error
             return $false
         }
+
+        # Disable Security Defaults (required for CA policies)
+Write-LogMessage -Message "Disabling Security Defaults..." -Type Info
+try {
+    Update-MgPolicyIdentitySecurityDefaultEnforcementPolicy -IsEnabled:$false -ErrorAction Stop
+    Write-LogMessage -Message "Security Defaults disabled successfully" -Type Success
+    Start-Sleep -Seconds 10
+}
+catch {
+    Write-LogMessage -Message "Failed to disable Security Defaults: $($_.Exception.Message)" -Type Warning
+}
         Write-LogMessage -Message "Checking Security Defaults status..." -Type Info
 $securityDefaultsEnabled = Test-SecurityDefaults
 
@@ -624,7 +599,6 @@ function New-CAPolicyC005 {
     }
 }
 
-# === Helper Functions ===
 # === Helper Functions ===
 function Test-CAPolicyPrerequisites {
     <#
