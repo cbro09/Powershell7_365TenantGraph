@@ -190,10 +190,6 @@ function Get-RequiredScopes {
 }
 
 function Connect-ToGraphWithScopes {
-    <#
-    .SYNOPSIS
-        Connects to Microsoft Graph with operation-specific scopes
-    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -201,41 +197,89 @@ function Connect-ToGraphWithScopes {
     )
     
     try {
-        # Get required scopes for this operation
         $requiredScopes = Get-RequiredScopes -Operation $Operation
         
-        # Check if already connected with correct scopes
-        $currentContext = Get-MgContext -ErrorAction SilentlyContinue
-        if ($currentContext) {
-            $currentScopes = $currentContext.Scopes
-            $missingScopes = $requiredScopes | Where-Object { $_ -notin $currentScopes }
-            
-            if ($missingScopes.Count -eq 0) {
-                Write-LogMessage -Message "Already connected with required scopes for $Operation" -Type Success
-                return $true
-            }
-            else {
-                Write-LogMessage -Message "Current connection missing scopes: $($missingScopes -join ', ')" -Type Warning
-                Write-LogMessage -Message "Reconnecting with required scopes..." -Type Info
-                Disconnect-MgGraph | Out-Null
-            }
-        }
-        
-        # Connect with required scopes
+        # First attempt - normal connection
         Write-LogMessage -Message "Connecting to Microsoft Graph for $Operation operations..." -Type Info
         Write-LogMessage -Message "Required scopes: $($requiredScopes -join ', ')" -Type Info
         
+        # Clear any existing connection first
+        try { Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null } catch { }
+        
+        # Attempt 1: Standard connection
         Connect-MgGraph -Scopes $requiredScopes -NoWelcome -ErrorAction Stop | Out-Null
         
-        $context = Get-MgContext
-        Write-LogMessage -Message "Connected to Microsoft Graph as $($context.Account)" -Type Success
-        Write-LogMessage -Message "Active scopes: $($context.Scopes -join ', ')" -Type Info -LogOnly
+        # Test if we actually got the permissions we need
+        $testResult = Test-ActualPermissions -Operation $Operation -RequiredScopes $requiredScopes
         
-        return $true
+        if ($testResult.Success) {
+            $context = Get-MgContext
+            Write-LogMessage -Message "Connected successfully with all required permissions" -Type Success
+            Write-LogMessage -Message "Account: $($context.Account)" -Type Info
+            return $true
+        }
+        else {
+            Write-LogMessage -Message "Connection successful but missing actual permissions" -Type Warning
+            Write-LogMessage -Message "Attempting interactive consent..." -Type Info
+            
+            # Attempt 2: Force interactive consent
+            Disconnect-MgGraph | Out-Null
+            Connect-MgGraph -Scopes $requiredScopes -UseDeviceAuthentication -ForceRefresh -ErrorAction Stop | Out-Null
+            
+            # Test again
+            $testResult = Test-ActualPermissions -Operation $Operation -RequiredScopes $requiredScopes
+            
+            if ($testResult.Success) {
+                Write-LogMessage -Message "Interactive consent successful!" -Type Success
+                return $true
+            }
+            else {
+                Write-LogMessage -Message "Even interactive consent failed. Admin consent required." -Type Error
+                Write-LogMessage -Message "Please grant admin consent in Azure Portal:" -Type Error
+                Write-LogMessage -Message "Azure Portal → App registrations → Microsoft Graph PowerShell → API permissions → Grant admin consent" -Type Error
+                return $false
+            }
+        }
     }
     catch {
         Write-LogMessage -Message "Failed to connect to Microsoft Graph: $($_.Exception.Message)" -Type Error
         return $false
+    }
+}
+
+function Test-ActualPermissions {
+    param(
+        [string]$Operation,
+        [array]$RequiredScopes
+    )
+    
+    try {
+        # Test the actual API endpoint for the operation
+        switch ($Operation) {
+            "ConditionalAccess" {
+                $testCall = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies?`$top=1" -ErrorAction Stop
+                Write-LogMessage -Message "✅ Conditional Access API test successful" -Type Success
+            }
+            "Groups" {
+                $testCall = Get-MgGroup -Top 1 -ErrorAction Stop
+                Write-LogMessage -Message "✅ Groups API test successful" -Type Success
+            }
+            "Users" {
+                $testCall = Get-MgUser -Top 1 -ErrorAction Stop
+                Write-LogMessage -Message "✅ Users API test successful" -Type Success
+            }
+            default {
+                # Generic test - try to read basic directory info
+                $testCall = Get-MgOrganization -ErrorAction Stop
+                Write-LogMessage -Message "✅ Basic Graph API test successful" -Type Success
+            }
+        }
+        
+        return @{ Success = $true }
+    }
+    catch {
+        Write-LogMessage -Message "❌ API test failed: $($_.Exception.Message)" -Type Warning
+        return @{ Success = $false; Error = $_.Exception.Message }
     }
 }
 
