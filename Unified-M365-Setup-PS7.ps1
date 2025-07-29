@@ -224,7 +224,7 @@ function Connect-ToGraphWithScopes {
             
             # Attempt 2: Force interactive consent
             Disconnect-MgGraph | Out-Null
-            Connect-MgGraph -Scopes $requiredScopes -UseDeviceAuthentication -ForceRefresh -ErrorAction Stop | Out-Null
+            Connect-MgGraph -Scopes $requiredScopes -UseDeviceAuthentication -ErrorAction Stop | Out-Null
             
             # Test again
             $testResult = Test-ActualPermissions -Operation $Operation -RequiredScopes $requiredScopes
