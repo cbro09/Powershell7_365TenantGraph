@@ -41,7 +41,53 @@ foreach ($Module in $RequiredModules) {
         Write-LogMessage -Message "$Module module imported" -Type Info
     }
 }
+function Test-SecurityDefaults {
+    <#
+    .SYNOPSIS
+        Checks if Security Defaults is currently enabled
+    #>
+    try {
+        $securityDefaults = Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy -ErrorAction Stop
+        return $securityDefaults.IsEnabled
+    }
+    catch {
+        Write-LogMessage -Message "Error checking Security Defaults status: $($_.Exception.Message)" -Type Error
+        return $null
+    }
+}
 
+function Disable-SecurityDefaults {
+    <#
+    .SYNOPSIS
+        Disables Security Defaults to allow Conditional Access policies
+    #>
+    try {
+        Write-LogMessage -Message "Security Defaults is enabled - this blocks Conditional Access policy creation" -Type Warning
+        Write-LogMessage -Message "Microsoft recommends disabling Security Defaults when implementing CA policies" -Type Info
+        
+        $confirmation = Read-Host "Disable Security Defaults to enable CA policy creation? (Y/N)"
+        if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
+            Write-LogMessage -Message "Security Defaults remains enabled - CA policy creation cancelled" -Type Warning
+            return $false
+        }
+        
+        Write-LogMessage -Message "Disabling Security Defaults..." -Type Info
+        $body = @{ isEnabled = $false }
+        Update-MgPolicyIdentitySecurityDefaultEnforcementPolicy -BodyParameter $body -ErrorAction Stop
+        
+        Write-LogMessage -Message "Security Defaults disabled successfully" -Type Success
+        Write-LogMessage -Message "Conditional Access policies will now provide security protection" -Type Info
+        
+        # Brief wait for policy propagation
+        Start-Sleep -Seconds 10
+        
+        return $true
+    }
+    catch {
+        Write-LogMessage -Message "Failed to disable Security Defaults: $($_.Exception.Message)" -Type Error
+        return $false
+    }
+}
 # === Main Conditional Access Function ===
 function New-TenantCAPolices {
     <#
@@ -90,7 +136,24 @@ function New-TenantCAPolices {
             Write-LogMessage -Message "Prerequisites not met for Conditional Access policy creation" -Type Error
             return $false
         }
-        
+        Write-LogMessage -Message "Checking Security Defaults status..." -Type Info
+$securityDefaultsEnabled = Test-SecurityDefaults
+
+if ($securityDefaultsEnabled -eq $true) {
+    Write-LogMessage -Message "Security Defaults is currently enabled" -Type Warning
+    $disableResult = Disable-SecurityDefaults
+    
+    if (-not $disableResult) {
+        Write-LogMessage -Message "Cannot proceed with CA policies while Security Defaults is enabled" -Type Error
+        return $false
+    }
+}
+elseif ($securityDefaultsEnabled -eq $false) {
+    Write-LogMessage -Message "Security Defaults is already disabled - CA policies can proceed" -Type Success
+}
+else {
+    Write-LogMessage -Message "Could not determine Security Defaults status - proceeding with caution" -Type Warning
+}
 # *** ADD DEBUG CODE RIGHT HERE ***
     Write-LogMessage -Message "=== ACTUAL TOKEN SCOPES DEBUG ===" -Type Info
     $context = Get-MgContext

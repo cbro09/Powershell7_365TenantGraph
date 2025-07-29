@@ -27,7 +27,8 @@ $script:ScopeGroups = @{
     )
     
     'Policy' = @(
-        "Policy.ReadWrite.ConditionalAccess"
+        "Policy.ReadWrite.ConditionalAccess",
+        "Policy.ReadWrite.SecurityDefaults"  
     )
     
     'Collaboration' = @(
