@@ -74,7 +74,7 @@ $script:GitHubConfig = @{
         "Intune" = "Intune-Module-PS7.ps1"  
         "Users" = "User-Module-PS7.ps1"
         "Documentation" = "Documentation-Module-PS7.ps1"
-        "AdminCreation" = "Admin-HD-Role-Creation-PS7.ps1"
+        "AdminCreation" = "Admin-Accounts-Module-PS7.ps1"
     }
 }
 
