@@ -634,7 +634,7 @@ function Start-TenantSetup {
                 "Set Up SharePoint Sites"
                 "Configure Intune Policies (Comprehensive)"
                 "Create Users from Excel"
-                "Create Admin Helpdesk Role"
+                "Create Admin Accounts"
                 "Generate Documentation"  
                 "Debug Excel File (Password Check)"
                 "Exit"
@@ -681,7 +681,7 @@ function Start-TenantSetup {
                 }
                 8 {
                     Write-LogMessage -Message "Launching: Admin Role Creation Module with Core scopes" -Type Info
-                    Invoke-ModuleOperationWithAuth -ModuleName "AdminCreation" -FunctionName "New-AdminHelpdeskRole" | Out-Null
+                    Invoke-ModuleOperationWithAuth -ModuleName "Admin Accounts" -FunctionName "New-TenantAdminAccounts" | Out-Null
                     Read-Host "Press Enter to continue"
                 }
                 9 {
