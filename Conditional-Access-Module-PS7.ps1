@@ -91,6 +91,23 @@ function New-TenantCAPolices {
             return $false
         }
         
+# *** ADD DEBUG CODE RIGHT HERE ***
+    Write-LogMessage -Message "=== ACTUAL TOKEN SCOPES DEBUG ===" -Type Info
+    $context = Get-MgContext
+    Write-LogMessage -Message "Connected Account: $($context.Account)" -Type Info
+    Write-LogMessage -Message "Scopes in token:" -Type Info
+    $context.Scopes | ForEach-Object { Write-LogMessage -Message "  - $_" -Type Info }
+    
+    # Test the actual token with CA API
+    try {
+        $testRead = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies?`$top=1"
+        Write-LogMessage -Message "✅ Token ACTUALLY works for CA read" -Type Success
+    } catch {
+        Write-LogMessage -Message "❌ Token DOESN'T work for CA: $($_.Exception.Message)" -Type Error
+    }
+    Write-LogMessage -Message "=== END DEBUG ===" -Type Info
+
+
         # Initialize tracking
         $script:TenantState.ConditionalAccessPolicies = @{}
         $createdPolicies = @{
