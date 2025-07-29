@@ -41,56 +41,43 @@ foreach ($Module in $RequiredModules) {
         Write-LogMessage -Message "$Module module imported" -Type Info
     }
 }
+
 function Test-SecurityDefaults {
     try {
-        # Use the correct parameter approach from Microsoft docs
-        $result = Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy -ErrorAction Stop
-        return $result.IsEnabled
+        $uri = "https://graph.microsoft.com/beta/policies/identitySecurityDefaultsEnforcementPolicy"
+        $result = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
+        return $result.isEnabled
     }
     catch {
-        Write-LogMessage -Message "Cannot check Security Defaults status: $($_.Exception.Message)" -Type Warning
-        # Try alternative method
-        try {
-            $uri = "https://graph.microsoft.com/v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
-            $result = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
-            return $result.isEnabled
-        }
-        catch {
-            Write-LogMessage -Message "Both methods failed - will proceed with assumption" -Type Warning
-            return $null
-        }
+        Write-LogMessage -Message "Cannot check Security Defaults: $($_.Exception.Message)" -Type Warning
+        return $null
     }
 }
 
 function Disable-SecurityDefaults {
     try {
-        Write-LogMessage -Message "Disabling Security Defaults (Microsoft recommended when using CA policies)..." -Type Info
+        Write-LogMessage -Message "Disabling Security Defaults (required for CA policies)..." -Type Info
         
-        # Method 1: Use the official PowerShell cmdlet (Microsoft recommended)
-        $body = @{ isEnabled = $false }
-        Update-MgPolicyIdentitySecurityDefaultEnforcementPolicy -BodyParameter $body -ErrorAction Stop
+        $confirmation = Read-Host "Disable Security Defaults to enable CA policies? (Y/N)"
+        if ($confirmation -ne 'Y' -and $confirmation -ne 'y') {
+            return $false
+        }
         
-        Write-LogMessage -Message "Security Defaults disabled successfully using PowerShell cmdlet" -Type Success
+        $uri = "https://graph.microsoft.com/beta/policies/identitySecurityDefaultsEnforcementPolicy"
+        $body = @{ isEnabled = $false } | ConvertTo-Json
+        
+        Invoke-MgGraphRequest -Method PATCH -Uri $uri -Body $body -ErrorAction Stop
+        
+        Write-LogMessage -Message "Security Defaults disabled successfully" -Type Success
+        Start-Sleep -Seconds 10
         return $true
     }
     catch {
-        Write-LogMessage -Message "PowerShell cmdlet failed, trying direct Graph API..." -Type Warning
-        
-        # Method 2: Fallback to direct Graph API
-        try {
-            $uri = "https://graph.microsoft.com/v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
-            $body = @{ isEnabled = $false }
-            Invoke-MgGraphRequest -Method PATCH -Uri $uri -Body $body -ErrorAction Stop
-            
-            Write-LogMessage -Message "Security Defaults disabled successfully using Graph API" -Type Success
-            return $true
-        }
-        catch {
-            Write-LogMessage -Message "Failed to disable Security Defaults: $($_.Exception.Message)" -Type Error
-            return $false
-        }
+        Write-LogMessage -Message "Failed to disable: $($_.Exception.Message)" -Type Error
+        return $false
     }
 }
+
 # === Main Conditional Access Function ===
 function New-TenantCAPolices {
     <#
