@@ -170,21 +170,35 @@ function New-TenantSharePoint {
         Write-LogMessage -Message "Connecting to SharePoint Online using official SPO module..." -Type Info
         
         try {
-            Connect-SPOService -Url $adminUrl -ErrorAction Stop
-            Write-LogMessage -Message "Successfully connected to SharePoint Online" -Type Success
-            
-            # Verify permissions
-            try {
-                $tenantInfo = Get-SPOTenant -ErrorAction Stop
-                Write-LogMessage -Message "SharePoint Administrator permissions verified" -Type Success
-            }
-            catch {
-                Write-LogMessage -Message "Connected but may not have SharePoint Administrator permissions" -Type Warning
-            }
+            # Try modern auth first
+            Connect-SPOService -Url $adminUrl -ModernAuth $true -ErrorAction Stop
+            Write-LogMessage -Message "Successfully connected to SharePoint Online with modern auth" -Type Success
         }
         catch {
-            Write-LogMessage -Message "Failed to connect to SharePoint - $($_.Exception.Message)" -Type Error
-            return $false
+            Write-LogMessage -Message "Modern auth failed, trying interactive..." -Type Warning
+            try {
+                # Fallback to interactive auth
+                Connect-SPOService -Url $adminUrl -ErrorAction Stop
+                Write-LogMessage -Message "Successfully connected to SharePoint Online" -Type Success
+            }
+            catch {
+                Write-LogMessage -Message "SharePoint connection failed completely" -Type Error
+                Write-LogMessage -Message "Error: $($_.Exception.Message)" -Type Error
+                Write-LogMessage -Message "Possible causes:" -Type Info
+                Write-LogMessage -Message "1. SharePoint not activated in tenant" -Type Info
+                Write-LogMessage -Message "2. No SharePoint Administrator role" -Type Info
+                Write-LogMessage -Message "3. Tenant URL incorrect" -Type Info
+                return $false
+            }
+        }
+        
+        # Verify permissions
+        try {
+            $tenantInfo = Get-SPOTenant -ErrorAction Stop
+            Write-LogMessage -Message "SharePoint Administrator permissions verified" -Type Success
+        }
+        catch {
+            Write-LogMessage -Message "Connected but may not have SharePoint Administrator permissions" -Type Warning
         }
         
         # === CONFIGURE HUB SITE ===
