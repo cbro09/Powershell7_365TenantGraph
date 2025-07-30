@@ -45,8 +45,15 @@ foreach ($Module in $RequiredModules) {
     
     if (!(Get-Module -Name $Module)) {
         try {
-            Import-Module $Module -Force -ErrorAction Stop
-            Write-Host "${Module} imported successfully" -ForegroundColor Green
+            # Special handling for SharePoint Online module in PS7
+            if ($Module -eq 'Microsoft.Online.SharePoint.PowerShell') {
+                Import-Module $Module -UseWindowsPowerShell -Force -ErrorAction Stop
+                Write-Host "${Module} imported with Windows PowerShell compatibility" -ForegroundColor Green
+            }
+            else {
+                Import-Module $Module -Force -ErrorAction Stop
+                Write-Host "${Module} imported successfully" -ForegroundColor Green
+            }
         }
         catch {
             Write-Host "Failed to import ${Module} - $($_.Exception.Message)" -ForegroundColor Red
