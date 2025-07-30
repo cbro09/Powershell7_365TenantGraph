@@ -61,7 +61,21 @@ foreach ($Module in $RequiredModules) {
         }
     }
     else {
-        Write-Host "${Module} already loaded" -ForegroundColor Gray
+        # If SharePoint module is already loaded, remove and reload with compatibility
+        if ($Module -eq 'Microsoft.Online.SharePoint.PowerShell') {
+            try {
+                Remove-Module $Module -Force -ErrorAction SilentlyContinue
+                Import-Module $Module -UseWindowsPowerShell -Force -ErrorAction Stop
+                Write-Host "${Module} reloaded with Windows PowerShell compatibility" -ForegroundColor Green
+            }
+            catch {
+                Write-Host "Failed to reload ${Module} with compatibility - $($_.Exception.Message)" -ForegroundColor Red
+                exit 1
+            }
+        }
+        else {
+            Write-Host "${Module} already loaded" -ForegroundColor Gray
+        }
     }
 }
 
