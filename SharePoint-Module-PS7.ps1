@@ -26,9 +26,9 @@
     - PowerShell 7+ compatibility
 #>
 
-# === Automatic Module Management (Fixed for PS7) ===
+# === Automatic Module Management (Official SharePoint Module) ===
 $RequiredModules = @(
-    'PnP.PowerShell',
+    'Microsoft.Online.SharePoint.PowerShell',
     'Microsoft.Graph.Groups',
     'Microsoft.Graph.Identity.DirectoryManagement',
     'Microsoft.Graph.Authentication'
