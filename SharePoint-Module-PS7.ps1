@@ -3,30 +3,24 @@
 #requires -Version 7.0
 <#
 .SYNOPSIS
-    SharePoint 5-Sites Creator - PowerShell 7 Fixed Version
+    SharePoint 5-Sites Creator - Official SPO Module Only
 .DESCRIPTION
-    Creates 5 SharePoint sites with hub architecture using PnP PowerShell.
-    Fixed variable parsing issues for PowerShell 7+ compatibility.
+    Creates 5 SharePoint sites using ONLY official Microsoft.Online.SharePoint.PowerShell module.
+    No PnP dependencies - pure SPO commands.
     
     Creates:
     - Root site as hub
     - 5 spoke sites: HR, Finance, IT, Projects, Marketing
     - Security groups for each site
-    - Hub navigation and associations
     
 .NOTES
-    Version: 2.1 - PowerShell 7 Parsing Fixed
+    Version: 2.2 - Pure SPO Module
     Requirements: PowerShell 7.0 or later
     Author: CB & Claude Partnership
-    Dependencies: PnP.PowerShell, Microsoft.Graph.Groups
-    
-    Fixed Issues:
-    - Variable reference parsing with colons
-    - Module import error handling
-    - PowerShell 7+ compatibility
+    Dependencies: Microsoft.Online.SharePoint.PowerShell, Microsoft.Graph.Groups
 #>
 
-# === Automatic Module Management (Official SharePoint Module) ===
+# === Automatic Module Management ===
 $RequiredModules = @(
     'Microsoft.Online.SharePoint.PowerShell',
     'Microsoft.Graph.Groups',
@@ -37,10 +31,7 @@ $RequiredModules = @(
 foreach ($Module in $RequiredModules) {
     Write-Host "Processing module: ${Module}" -ForegroundColor Cyan
     
-    # Check if module is available
-    $moduleAvailable = Get-Module -ListAvailable -Name $Module
-    
-    if (!$moduleAvailable) {
+    if (!(Get-Module -ListAvailable -Name $Module)) {
         Write-Host "Installing ${Module} module..." -ForegroundColor Yellow
         try {
             Install-Module $Module -Force -Scope CurrentUser -AllowClobber -ErrorAction Stop
@@ -52,7 +43,6 @@ foreach ($Module in $RequiredModules) {
         }
     }
     
-    # Import if not already loaded
     if (!(Get-Module -Name $Module)) {
         try {
             Import-Module $Module -Force -ErrorAction Stop
@@ -73,7 +63,6 @@ $SharePointConfig = @{
     DefaultSites = @("HR", "Finance", "IT", "Projects", "Marketing")
     StorageQuota = 1024  # MB
     SiteTemplate = "STS#3"  # Modern Team Site
-    HubSiteTemplate = "SITEPAGEPUBLISHING#0"  # Communication Site for hub
 }
 
 # === Logging Function ===
@@ -101,27 +90,23 @@ function Write-LogMessage {
 function New-TenantSharePoint {
     <#
     .SYNOPSIS
-        Creates 5 SharePoint sites with hub architecture
+        Creates 5 SharePoint sites with hub architecture using pure SPO commands
     #>
     [CmdletBinding()]
     param()
     
     try {
-        Write-LogMessage -Message "Starting SharePoint 5-Sites creation..." -Type Info
+        Write-LogMessage -Message "Starting SharePoint 5-Sites creation with official SPO module..." -Type Info
         
         # === FORCE AUTHENTICATION ===
         Write-LogMessage -Message "Forcing fresh authentication to Microsoft Graph..." -Type Info
         
-        # Clear any existing connections
         try {
             Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null
-            Disconnect-PnPOnline -ErrorAction SilentlyContinue
         }
-        catch {
-            # Ignore cleanup errors
-        }
+        catch { }
         
-        # Connect to Microsoft Graph with required scopes
+        # Connect to Microsoft Graph
         $graphScopes = @(
             "User.ReadWrite.All",
             "Group.ReadWrite.All",
@@ -137,7 +122,6 @@ function New-TenantSharePoint {
         # === GET TENANT INFORMATION ===
         Write-LogMessage -Message "Gathering tenant information..." -Type Info
         
-        # Get organization info
         $org = Get-MgOrganization -ErrorAction Stop | Select-Object -First 1
         $domains = Get-MgDomain -ErrorAction Stop
         $defaultDomain = $domains | Where-Object { $_.IsDefault -eq $true }
@@ -183,15 +167,15 @@ function New-TenantSharePoint {
         Write-LogMessage -Message "Hub Site URL: $hubSiteUrl" -Type Info
         
         # === CONNECT TO SHAREPOINT ===
-        Write-LogMessage -Message "Connecting to SharePoint Online using PnP PowerShell..." -Type Info
+        Write-LogMessage -Message "Connecting to SharePoint Online using official SPO module..." -Type Info
         
         try {
-            Connect-PnPOnline -Url $adminUrl -Interactive -ErrorAction Stop
+            Connect-SPOService -Url $adminUrl -ErrorAction Stop
             Write-LogMessage -Message "Successfully connected to SharePoint Online" -Type Success
             
             # Verify permissions
             try {
-                $tenantInfo = Get-PnPTenant -ErrorAction Stop
+                $tenantInfo = Get-SPOTenant -ErrorAction Stop
                 Write-LogMessage -Message "SharePoint Administrator permissions verified" -Type Success
             }
             catch {
@@ -208,19 +192,15 @@ function New-TenantSharePoint {
         
         try {
             # Get root site info
-            $rootSiteInfo = Get-PnPSite -Identity $hubSiteUrl -ErrorAction Stop
+            $rootSiteInfo = Get-SPOSite -Identity $hubSiteUrl -Detailed -ErrorAction Stop
             Write-LogMessage -Message "Root site found - Title: '$($rootSiteInfo.Title)'" -Type Success
             
             # Update root site title
             $hubTitle = "${tenantName} Hub"
             if ($rootSiteInfo.Title -ne $hubTitle) {
                 try {
-                    Connect-PnPOnline -Url $hubSiteUrl -Interactive
-                    Set-PnPSite -Title $hubTitle -ErrorAction Stop
+                    Set-SPOSite -Identity $hubSiteUrl -Title $hubTitle -ErrorAction Stop
                     Write-LogMessage -Message "Updated hub site title to '$hubTitle'" -Type Success
-                    
-                    # Reconnect to admin center
-                    Connect-PnPOnline -Url $adminUrl -Interactive
                 }
                 catch {
                     Write-LogMessage -Message "Could not update hub site title - $($_.Exception.Message)" -Type Warning
@@ -228,14 +208,14 @@ function New-TenantSharePoint {
             }
             
             # Register as hub site
-            $existingHubs = Get-PnPHubSite -ErrorAction SilentlyContinue
+            $existingHubs = Get-SPOHubSite -ErrorAction SilentlyContinue
             $isAlreadyHub = $existingHubs | Where-Object { $_.SiteUrl -eq $hubSiteUrl }
             
             if ($isAlreadyHub) {
                 Write-LogMessage -Message "Root site is already registered as a hub site" -Type Warning
             }
             else {
-                Register-PnPHubSite -Site $hubSiteUrl
+                Register-SPOHubSite -Site $hubSiteUrl
                 Write-LogMessage -Message "Successfully registered root site as hub" -Type Success
                 Start-Sleep -Seconds 15
             }
@@ -284,31 +264,41 @@ function New-TenantSharePoint {
         }
         
         # === CREATE 5 SPOKE SITES ===
-        Write-LogMessage -Message "Creating 5 spoke sites..." -Type Info
+        Write-LogMessage -Message "Creating 5 spoke sites using SPO cmdlets..." -Type Info
         
         $createdSites = @()
         
         foreach ($siteName in $SharePointConfig.DefaultSites) {
             try {
                 $siteUrl = "${tenantUrl}/sites/$($siteName.ToLower())"
-                $siteAlias = $siteName.ToLower()
                 
                 Write-LogMessage -Message "Creating site: $siteName at $siteUrl" -Type Info
                 
                 # Check if site already exists
                 try {
-                    $existingSite = Get-PnPSite -Identity $siteUrl -ErrorAction Stop
+                    $existingSite = Get-SPOSite -Identity $siteUrl -ErrorAction Stop
                     Write-LogMessage -Message "Site '$siteName' already exists" -Type Warning
                     $createdSites += $siteUrl
                     continue
                 }
                 catch {
-                    # Site doesn't exist, proceed with creation
+                    # Check if site is in recycle bin
+                    try {
+                        $deletedSite = Get-SPODeletedSite | Where-Object { $_.Url -eq $siteUrl }
+                        if ($deletedSite) {
+                            Write-LogMessage -Message "Site '$siteName' found in recycle bin - removing permanently..." -Type Warning
+                            Remove-SPODeletedSite -Identity $siteUrl -Confirm:$false -ErrorAction Stop
+                            Start-Sleep -Seconds 30
+                        }
+                    }
+                    catch {
+                        # Continue with creation
+                    }
                 }
                 
-                # Create the site
+                # Create the site using SPO cmdlet
                 try {
-                    New-PnPSite -Type TeamSite -Title $siteName -Alias $siteAlias -Owner $adminEmail -ErrorAction Stop
+                    New-SPOSite -Url $siteUrl -Title $siteName -Owner $adminEmail -StorageQuota $SharePointConfig.StorageQuota -Template $SharePointConfig.SiteTemplate -ErrorAction Stop
                     Write-LogMessage -Message "Created site: $siteName" -Type Success
                     $createdSites += $siteUrl
                 }
@@ -328,17 +318,17 @@ function New-TenantSharePoint {
         }
         
         if ($createdSites.Count -gt 0) {
-            Write-LogMessage -Message "Waiting for site provisioning (3 minutes)..." -Type Info
-            Start-Sleep -Seconds 180
+            Write-LogMessage -Message "Waiting for site provisioning (2 minutes)..." -Type Info
+            Start-Sleep -Seconds 120
         }
         
         # === ASSOCIATE SITES WITH HUB ===
-        Write-LogMessage -Message "Associating spoke sites with hub..." -Type Info
+        Write-LogMessage -Message "Associating spoke sites with hub using SPO cmdlets..." -Type Info
         
         $successfulAssociations = 0
         foreach ($siteUrl in $createdSites) {
             try {
-                Add-PnPHubSiteAssociation -Site $siteUrl -HubSite $hubSiteUrl -ErrorAction Stop
+                Add-SPOHubSiteAssociation -Site $siteUrl -HubSite $hubSiteUrl -ErrorAction Stop
                 $siteName = ($siteUrl -split '/sites/')[-1]
                 Write-LogMessage -Message "Associated $siteName with hub" -Type Success
                 $successfulAssociations++
@@ -364,7 +354,7 @@ function New-TenantSharePoint {
             
             if ($navigationItems.Count -gt 0) {
                 $navigationJson = $navigationItems | ConvertTo-Json -Depth 3
-                Set-PnPHubSite -Identity $hubSiteUrl -MenuConfiguration $navigationJson
+                Set-SPOHubSite -Identity $hubSiteUrl -MenuConfiguration $navigationJson
                 Write-LogMessage -Message "Hub navigation configured with $($navigationItems.Count) site links" -Type Success
             }
         }
@@ -415,7 +405,7 @@ function New-TenantSharePoint {
     finally {
         # Cleanup connections
         try {
-            Disconnect-PnPOnline -ErrorAction SilentlyContinue
+            Disconnect-SPOService -ErrorAction SilentlyContinue
             Write-LogMessage -Message "Disconnected from SharePoint" -Type Info
         }
         catch {
@@ -426,7 +416,8 @@ function New-TenantSharePoint {
 
 # === SCRIPT EXECUTION ===
 Write-Host ""
-Write-Host "SharePoint 5-Sites Creator - PowerShell 7 Fixed" -ForegroundColor Magenta
+Write-Host "SharePoint 5-Sites Creator - Pure SPO Module" -ForegroundColor Magenta
+Write-Host "Using: Microsoft.Online.SharePoint.PowerShell ONLY" -ForegroundColor Cyan
 Write-Host "Ready to create: HR, Finance, IT, Projects, Marketing" -ForegroundColor Cyan
 Write-Host ""
 
